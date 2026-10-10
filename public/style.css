@@ -1157,6 +1157,12 @@ details .player-list {
   background: #1e1716;
 }
 
+.target.selected {
+  border-color: var(--red);
+  background: rgba(201, 52, 66, 0.12);
+  box-shadow: inset 0 -3px 0 rgba(201, 52, 66, 0.48);
+}
+
 .target span {
   display: grid;
   place-items: center;
@@ -1216,6 +1222,54 @@ details .player-list {
 .announcement.compact {
   margin-top: 0;
   font-size: 0.78rem;
+}
+
+.mafia-selections {
+  margin: 0.8rem 0 1rem;
+  padding: 0.8rem;
+  border: 1px solid #4a3535;
+  background: #120f0f;
+}
+
+.mafia-selections h2 {
+  margin: 0 0 0.55rem;
+  color: #c79797;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.mafia-selection-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 2rem;
+  border-top: 1px dashed #382d2b;
+  color: #a79b91;
+  font-size: 0.76rem;
+}
+
+.mafia-selection-row:first-child {
+  border-top: 0;
+}
+
+.mafia-selection-row strong {
+  color: #e4d8cb;
+  text-align: right;
+}
+
+.mafia-selection-row strong::before {
+  content: "→ ";
+  color: var(--red);
+}
+
+.mafia-selection-row strong.pending {
+  color: #746a62;
+  font-weight: 500;
+}
+
+.mafia-selection-row.self span {
+  color: #d4c5b8;
 }
 
 .day-ready-button {

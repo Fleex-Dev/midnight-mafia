@@ -130,6 +130,46 @@ test("night advances immediately after every required action", () => {
   assert.equal(room.round, 2);
 });
 
+test("the night keeps the day vote result visible", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 6);
+  enterFirstNight(service, room, players, host);
+  resolveFirstNight(service, room, players);
+  const alive = players.filter((player) => player.alive);
+  for (const player of alive) {
+    service.applyAction(room, player, { type: "set-day-ready", ready: true });
+  }
+  const target = alive.find((player) => player.role !== "mafia");
+  voteFor(service, room, players, target);
+  assert.equal(room.phase, "night");
+  assert.match(room.announcement, new RegExp(`^${target.name} 님이 투표로`));
+  assert.equal(service.getState(room, host).announcement, room.announcement);
+});
+
+test("Mafia can see team selections while other roles cannot", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 8);
+  enterFirstNight(service, room, players, host);
+  const mafia = players.filter((player) => player.role === "mafia");
+  const citizen = players.find((player) => player.role === "citizen");
+  const target = players.find(
+    (player) => player.alive && player.role !== "mafia",
+  );
+
+  service.applyAction(room, mafia[0], {
+    type: "night-action",
+    targetId: target.id,
+  });
+
+  const teammateState = service.getState(room, mafia[1]);
+  const selection = teammateState.you.mafiaSelections.find(
+    (current) => current.playerName === mafia[0].name,
+  );
+  assert.equal(selection.targetName, target.name);
+  assert.equal(teammateState.you.mafiaSelections.length, mafia.length);
+  assert.deepEqual(service.getState(room, citizen).you.mafiaSelections, []);
+});
+
 test("leaving transfers the host and cannot block a phase", () => {
   const service = createGameService();
   const { room, players, host } = addPlayers(service);

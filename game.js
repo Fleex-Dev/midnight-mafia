@@ -152,12 +152,14 @@ function checkWinner(room) {
   return false;
 }
 
-function beginNight(room) {
+function beginNight(room, announcement = "") {
   room.phase = "night";
   room.openingDay = false;
   room.actions.clear();
   room.dayReady.clear();
-  room.announcement = `${room.round}번째 밤입니다. 눈을 감고 각자의 행동을 선택하세요.`;
+  room.announcement =
+    announcement ||
+    `${room.round}번째 밤입니다. 각자의 화면에서 행동을 선택하세요.`;
 }
 
 function beginDay(room, announcement = "", openingDay = false) {
@@ -242,8 +244,9 @@ function resolveVote(room) {
   }
   const eliminated = room.players.get(leaders[0]);
   eliminated.alive = false;
-  room.announcement = `${eliminated.name} 님이 투표로 지목됐습니다. 정체는 ${ROLE_INFO[eliminated.role].name}였습니다.`;
-  if (!checkWinner(room)) beginNight(room);
+  const announcement = `${eliminated.name} 님이 투표로 지목됐습니다. 정체는 ${ROLE_INFO[eliminated.role].name}였습니다.`;
+  room.announcement = announcement;
+  if (!checkWinner(room)) beginNight(room, announcement);
 }
 
 export function createGameService() {
@@ -520,6 +523,22 @@ export function createGameService() {
             )
             .map((current) => current.name)
         : [];
+    const mafiaSelections =
+      room.phase === "night" && player.alive && player.role === "mafia"
+        ? alivePlayers(room)
+            .filter((current) => current.role === "mafia")
+            .map((current) => {
+              const selection = room.actions.get(current.id);
+              const target = selection
+                ? room.players.get(selection.targetId)
+                : null;
+              return {
+                playerName: current.name,
+                targetName: target?.name || "",
+                isSelf: current.id === player.id,
+              };
+            })
+        : [];
     let targets = [];
     if (
       room.phase === "night" &&
@@ -565,8 +584,10 @@ export function createGameService() {
         dayReady: room.dayReady.has(player.id),
         isHost: player.id === room.hostId,
         actionSubmitted: Boolean(action),
+        selectedTargetId: action?.targetId || "",
         investigation: room.investigations.get(player.id),
         mafiaTeam,
+        mafiaSelections,
         privateNotice: room.privateNotices.get(player.id) || "",
       },
       targets,

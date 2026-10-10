@@ -60,11 +60,38 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
       const el = view("target", {
         initial: target.name.slice(0, 1),
         name: target.name,
-        verb,
+        verb:
+          state().you.selectedTargetId === target.id ? "현재 선택" : verb,
       });
       el.dataset.action = type;
       el.dataset.id = target.id;
+      el.classList.toggle(
+        "selected",
+        state().you.selectedTargetId === target.id,
+      );
       return el;
+    });
+  }
+
+  function mafiaSelectionRows(selections) {
+    return selections.map((selection) => {
+      const row = document.createElement("div");
+      row.className = "mafia-selection-row";
+      row.classList.toggle("self", selection.isSelf);
+
+      const player = document.createElement("span");
+      player.textContent = selection.isSelf
+        ? `${selection.playerName} (나)`
+        : selection.playerName;
+      player.setAttribute("translate", "no");
+
+      const target = document.createElement("strong");
+      target.textContent = selection.targetName || "선택 전";
+      if (selection.targetName) target.setAttribute("translate", "no");
+      else target.className = "pending";
+
+      row.append(player, target);
+      return row;
     });
   }
 
@@ -148,12 +175,15 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     slot(el, "players", players());
     return el;
   }
-  function renderWaiting(title, description) {
-    return view("waiting", {
+  function renderWaiting(title, description, announcement = "") {
+    const el = view("waiting", {
       phase: phaseLabels[state().phase],
       title,
       description,
+      announcement,
     });
+    visible(el, "announcement", !!announcement);
+    return el;
   }
   function renderNight() {
     const s = state();
@@ -161,16 +191,22 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
       return renderWaiting(
         "당신은 탈락했습니다",
         "게임이 끝날 때까지 다른 사람의 화면을 보지 말고 지켜봐 주세요.",
+        s.announcement,
       );
-    if (s.you.actionSubmitted)
+    if (
+      s.you.actionSubmitted &&
+      (s.you.role !== "mafia" || s.you.mafiaSelections.length < 2)
+    )
       return renderWaiting(
         "선택을 마쳤습니다",
         "다른 역할의 선택이 끝나면 아침이 밝습니다.",
+        s.announcement,
       );
     if (s.you.role === "citizen")
       return renderWaiting(
         "조용한 밤입니다",
-        "눈을 감고 밤이 지나가기를 기다려 주세요.",
+        "다른 역할의 선택이 끝나면 아침이 밝습니다.",
+        s.announcement,
       );
     const role = s.you.role,
       names = { mafia: "마피아", cop: "경찰", doctor: "의사" },
@@ -178,6 +214,7 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     const investigation = s.you.investigation;
     const el = view("night", {
       eyebrow: `${s.round}번째 밤 · ${names[role]}`,
+      announcement: s.announcement,
       notice: s.you.privateNotice || "",
       team: `동료: ${s.you.mafiaTeam.join(", ")}`,
       investigation: investigation
@@ -190,7 +227,14 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     slot(el, "title", h);
     visible(el, "notice", role === "mafia" && !!s.you.privateNotice);
     visible(el, "team", role === "mafia" && !!s.you.mafiaTeam.length);
+    visible(
+      el,
+      "mafiaSelections",
+      role === "mafia" && s.you.mafiaSelections.length > 1,
+    );
     visible(el, "investigation", role === "cop" && !!investigation);
+    if (role === "mafia")
+      slot(el, "mafiaSelections", mafiaSelectionRows(s.you.mafiaSelections));
     slot(el, "targets", targets("night-action", verbs[role]));
     return el;
   }
