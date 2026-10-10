@@ -1,0 +1,19 @@
+{
+  "name": "mafia-party",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "wrangler dev",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:check": "wrangler deploy --dry-run",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "wrangler": "^4.149.0"
+  }
+}

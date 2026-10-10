@@ -1,0 +1,72 @@
+<section class="panel lobby-panel">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">방 코드</p>
+      <h1 class="room-code" data-text="code"></h1>
+    </div>
+    <span class="count" data-text="count"></span>
+  </div>
+  <div class="lobby-invite-slot">
+    <div class="invite-card">
+      <img data-attr-src="qrDataUrl" alt="게임 참가 QR 코드" />
+      <div>
+        <strong>카메라로 스캔</strong>
+        <input
+          id="invite-link"
+          class="invite-link"
+          readonly
+          aria-label="초대 링크"
+        />
+        <button id="share" class="text-button share-button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v12m0-12L7.5 7.5M12 3l4.5 4.5M5 11v8h14v-8" />
+          </svg>
+          <span>초대 링크 복사</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <section class="role-options" aria-labelledby="role-options-title">
+    <div class="role-options-heading">
+      <h2 id="role-options-title">이번 게임 역할</h2>
+      <div class="role-summary" aria-label="역할 구성">
+        <span data-text="mafia"></span><span data-text="cop"></span
+        ><span data-text="doctor"></span><span data-text="citizen"></span>
+      </div>
+    </div>
+    <div class="role-options-controls">
+      <div data-if="host">
+        <label class="role-toggle"
+          ><div>
+            <strong>경찰 포함</strong
+            ><small>밤마다 한 명의 정체를 조사합니다.</small>
+          </div>
+          <input id="setting-cop" type="checkbox" /><span
+            aria-hidden="true"
+          ></span></label
+        ><label class="role-toggle"
+          ><div>
+            <strong>의사 포함</strong
+            ><small>밤마다 한 명을 마피아에게서 보호합니다.</small>
+          </div>
+          <input id="setting-doctor" type="checkbox" /><span
+            aria-hidden="true"
+          ></span
+        ></label>
+      </div>
+      <p class="role-options-note" data-if="guest">
+        방장이 역할 구성을 선택합니다.
+      </p>
+    </div>
+  </section>
+  <h2 class="list-title">참가자</h2>
+  <ul class="player-list" data-slot="players"></ul>
+  <div class="lobby-action-slot">
+    <button
+      id="start"
+      class="button primary"
+      data-if="host"
+      data-text="start"
+    ></button>
+  </div>
+</section>

@@ -1,0 +1,42 @@
+.info-shell { width: 100%; }
+.info-shell .topbar, .info-shell .site-footer { width: min(100%, 64rem); }
+.info-shell .brand { color: var(--ink); text-decoration: none; }
+.info-actions { display: flex; align-items: center; gap: .65rem; }
+.info-actions .language-select { max-width: 7.3rem; }
+.back-link { color: #978d84; font-size: .74rem; text-decoration: none; }
+.back-link:hover { color: var(--ink); }
+.article-panel { width: min(100%, 64rem); padding: clamp(1.25rem, 4vw, 3.2rem); }
+.article-panel > header { position: relative; padding: 0 0 1.7rem; border-bottom: 1px solid var(--line); }
+.article-panel > header::before { content: ""; display: block; width: 2.75rem; height: .25rem; margin-bottom: 1rem; background: var(--red); }
+.article-panel h1 { max-width: 14ch; font-size: clamp(2.8rem, 8vw, 5.6rem); line-height: .92; word-break: keep-all; overflow-wrap: break-word; }
+.article-panel .lead { max-width: 46rem; margin: 1rem 0 0; color: var(--muted); font-size: .94rem; line-height: 1.75; }
+.article-nav { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.2rem 0 0; }
+.article-nav a { padding: .4rem .56rem; border: 1px solid var(--line); border-radius: 0; color: #aba097; font: 680 .68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none; text-transform: uppercase; }
+.article-nav a:hover { border-color: var(--line-strong); color: #fff; }
+.article-nav a[aria-current="page"] { border-color: #8a323a; background: var(--red-soft); color: #ef949c; }
+.article-section { padding: 1.6rem 0; border-bottom: 1px dashed #3b332e; }
+.article-section:last-child { padding-bottom: 0; border-bottom: 0; }
+.article-section h2 { margin: 0 0 .78rem; color: #e8ded1; font-size: 1.25rem; letter-spacing: -.02em; }
+.article-section h3 { margin: 1.25rem 0 .42rem; color: #d7cbbb; font-size: 1rem; }
+.article-section p, .article-section li { color: #b8ada2; font-size: .88rem; line-height: 1.8; }
+.article-section p { margin: .55rem 0; }
+.article-section ul, .article-section ol { margin: .65rem 0 0; padding-left: 1.2rem; }
+.article-section li + li { margin-top: .45rem; }
+.step-list { display: grid; gap: 0; padding: 0 !important; border-top: 1px solid var(--line); list-style: none; counter-reset: steps; }
+.step-list li { position: relative; min-height: 3.55rem; padding: .9rem .6rem .9rem 3.4rem; border-bottom: 1px solid var(--line); counter-increment: steps; }
+.step-list li::before { content: counter(steps, decimal-leading-zero); position: absolute; left: .25rem; top: .9rem; color: var(--red-light); font: 750 .78rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; }
+.role-guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .7rem; }
+.role-guide-card { padding: 1rem; border: 1px solid var(--line); border-radius: 0; background: #14110f; }
+.role-guide-card .role-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; margin-bottom: .75rem; border: 1px solid #733039; background: var(--red-soft); color: #e86f79; font: 1.25rem/1 Georgia, serif; }
+.role-guide-card.cop .role-icon { border-color: #46536a; background: rgba(145,163,194,.08); color: #91a3c2; }
+.role-guide-card.doctor .role-icon { border-color: #456451; background: rgba(120,182,140,.08); color: #78b68c; }
+.role-guide-card.citizen .role-icon { border-color: #65573e; background: rgba(196,171,122,.07); color: #c4ab7a; }
+.role-guide-card h2 { margin: 0 0 .4rem; font-size: 1.06rem; }
+.role-guide-card p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.7; }
+.note-box { margin-top: 1rem; padding: .85rem 1rem; border: 1px dashed #665243; border-left: 4px solid var(--gold); background: rgba(184,154,102,.055); color: #c1b4a5; font-size: .8rem; line-height: 1.7; }
+.policy-date { color: #766e67; font: .7rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+@media (max-width: 600px) {
+  .role-guide-grid { grid-template-columns: 1fr; }
+  .info-actions .back-link { display: none; }
+  .article-panel { padding: 1rem; }
+}

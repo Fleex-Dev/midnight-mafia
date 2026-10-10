@@ -1,0 +1,9 @@
+/* Role artwork derives from the centralized role-icons.js mapping. */
+.role-symbol .role-svg { width: 4rem; height: 4rem; display: block; }
+.role-guide-card .role-icon .role-svg { width: 1.5rem; height: 1.5rem; display: block; }
+.role-symbol .role-svg, .role-guide-card .role-svg {
+  background: currentColor;
+  -webkit-mask: var(--icon-url) center / contain no-repeat;
+  mask: var(--icon-url) center / contain no-repeat;
+  /* Use the SVG as a mask so that role-specific CSS colors apply. */
+}

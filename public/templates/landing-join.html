@@ -1,0 +1,59 @@
+<section class="panel start-panel landing-layout" aria-labelledby="join-title">
+  <div class="landing-copy">
+    <p class="eyebrow">사건에 합류하세요</p>
+    <h1 id="join-title">오늘 밤,<br />누구를 믿을까요?</h1>
+    <p class="intro">
+      친구에게 받은 방 코드와 닉네임을 입력하고 게임에 참가하세요.
+    </p>
+    <div class="case-mark" aria-hidden="true">
+      <span>CASE FILE</span>
+      <b>00:00</b>
+    </div>
+  </div>
+
+  <div class="entry-card">
+    <p class="entry-number">JOIN CASE / 02</p>
+
+    <h2 class="entry-title">방 참가하기</h2>
+    <p class="entry-description">초대받은 사건에 참가할 준비가 되셨나요?</p>
+
+    <label for="room">방 코드</label>
+    <div class="room-input-wrap">
+      <input
+        id="room"
+        maxlength="4"
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        placeholder="4자리 방 코드"
+      />
+      <button
+        id="clear-room"
+        class="room-clear"
+        type="button"
+        aria-label="방 코드 지우기"
+        hidden
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <label for="name">닉네임</label>
+    <input
+      id="name"
+      maxlength="12"
+      autocomplete="nickname"
+      placeholder="예: 지수"
+    />
+
+    <button id="join" class="button primary" type="button">참가하기</button>
+
+    <button id="back" class="link-button" type="button">
+      처음으로 돌아가기
+    </button>
+
+    <p class="form-note" data-text="note"></p>
+  </div>
+</section>

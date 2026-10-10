@@ -1,0 +1,91 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile, access } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
+const read = (path) => readFile(join(root, path), "utf8");
+
+test("all application templates and role icons exist", async () => {
+  const templates = [
+    "player",
+    "target",
+    "lobby",
+    "reveal-hidden",
+    "reveal",
+    "waiting",
+    "night",
+    "day",
+    "vote",
+    "ended",
+    "header",
+    "footer",
+    "landing-start",
+    "landing-create",
+    "landing-join",
+  ];
+  await Promise.all(
+    templates.map((name) =>
+      access(join(root, "public", "templates", `${name}.html`)),
+    ),
+  );
+  await Promise.all(
+    ["crosshair.svg", "whistle.svg", "stethoscope.svg", "users-round.svg"].map(
+      (name) => access(join(root, "public", "icons", "game", name)),
+    ),
+  );
+});
+
+test("Cloudflare Worker and Durable Object configuration is present", async () => {
+  const [worker, config, packageFile] = await Promise.all([
+    read("src/worker.js"),
+    read("wrangler.jsonc"),
+    read("package.json"),
+  ]);
+  assert.match(worker, /class RoomDurableObject/);
+  assert.match(worker, /acceptWebSocket/);
+  assert.match(config, /"new_sqlite_classes"/);
+  assert.match(config, /"run_worker_first": true/);
+  assert.match(packageFile, /wrangler deploy/);
+});
+
+test("lobby includes QR, share icon, and host controls", async () => {
+  const [lobby, app] = await Promise.all([
+    read("public/templates/lobby.html"),
+    read("public/app.js"),
+  ]);
+  assert.match(lobby, /id="share"/);
+  assert.match(lobby, /초대 링크 복사/);
+  assert.match(lobby, /<svg[^>]*viewBox="0 0 24 24"/);
+  assert.match(lobby, /id="setting-cop"/);
+  assert.match(lobby, /id="setting-doctor"/);
+  assert.match(lobby, /id="start"/);
+  assert.match(app, /addEventListener\("click", copyInvite\)/);
+  assert.doesNotMatch(app, /navigator\.share/);
+});
+
+test("information pages exist in Korean and English", async () => {
+  for (const page of ["guide", "rules", "roles", "privacy"]) {
+    const [ko, en] = await Promise.all([
+      read(`public/${page}.html`),
+      read(`public/en/${page}.html`),
+    ]);
+    assert.match(ko, /<title>.+<\/title>/);
+    assert.match(en, /<title>.+<\/title>/);
+    assert.match(ko, /© 2026 FLEEX/);
+    assert.match(en, /© 2026 FLEEX/);
+  }
+});
+
+test("the application keeps localization and responsive styles wired", async () => {
+  const [index, app, styles] = await Promise.all([
+    read("public/index.html"),
+    read("public/app.js"),
+    read("public/style.css"),
+  ]);
+  assert.match(index, /viewport-fit=cover/);
+  assert.match(app, /setLocalePreference/);
+  assert.match(app, /© 2026 FLEEX/);
+  assert.match(styles, /@media \(max-width: 600px\)/);
+});
