@@ -80,10 +80,15 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
       row.classList.toggle("self", selection.isSelf);
 
       const player = document.createElement("span");
-      player.textContent = selection.isSelf
-        ? `${selection.playerName} (나)`
-        : selection.playerName;
-      player.setAttribute("translate", "no");
+      const playerName = document.createElement("span");
+      playerName.textContent = selection.playerName;
+      playerName.setAttribute("translate", "no");
+      player.append(playerName);
+      if (selection.isSelf) {
+        const selfLabel = document.createElement("small");
+        selfLabel.textContent = " (나)";
+        player.append(selfLabel);
+      }
 
       const target = document.createElement("strong");
       target.textContent = selection.targetName || "선택 전";

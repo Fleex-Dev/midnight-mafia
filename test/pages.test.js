@@ -89,3 +89,20 @@ test("the application keeps localization and responsive styles wired", async () 
   assert.match(app, /© 2026 FLEEX/);
   assert.match(styles, /@media \(max-width: 600px\)/);
 });
+
+test("night UI includes localized Mafia coordination and vote results", async () => {
+  const [night, waiting, screens, i18n, styles] = await Promise.all([
+    read("public/templates/night.html"),
+    read("public/templates/waiting.html"),
+    read("public/js/screens.js"),
+    read("public/i18n.js"),
+    read("public/style.css"),
+  ]);
+  assert.match(night, /data-if="mafiaSelections"/);
+  assert.match(night, /data-text="announcement"/);
+  assert.match(waiting, /data-text="announcement"/);
+  assert.match(screens, /mafiaSelectionRows/);
+  assert.match(i18n, /"마피아 선택 현황": "Mafia selections"/);
+  assert.match(i18n, /"\(나\)": "\(You\)"/);
+  assert.match(styles, /\.mafia-selection-row/);
+});

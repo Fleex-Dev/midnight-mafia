@@ -111,6 +111,7 @@ const EN = {
   "현재 선택": "Selected",
   "선택 전": "Not selected",
   "마피아 선택 현황": "Mafia selections",
+  "(나)": "(You)",
   "다른 역할의 선택이 끝나면 아침이 밝습니다.":
     "Morning begins when all night actions are complete.",
   "조용한 밤입니다": "It is a quiet night",
@@ -276,7 +277,6 @@ function dynamicEnglish(text) {
     return `${match[1]} more ${match[1] === "1" ? "player" : "players"} needed`;
   if ((match = text.match(/^생존자 (\d+)명$/))) return `${match[1]} survivors`;
   if ((match = text.match(/^동료: (.+)$/))) return `Teammates: ${match[1]}`;
-  if ((match = text.match(/^(.+) \(나\)$/))) return `${match[1]} (You)`;
   if ((match = text.match(/^(.+) · (마피아|마피아 아님)$/)))
     return `${match[1]} · ${EN[match[2]] || match[2]}`;
   if ((match = text.match(/^(.+) 내보내기$/))) return `Remove ${match[1]}`;
