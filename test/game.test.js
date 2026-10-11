@@ -51,9 +51,19 @@ function resolveFirstNight(service, room, players) {
   const victim = players.find(
     (player) => player.role === "citizen" && player.alive,
   );
-  service.applyAction(room, mafia, { type: "night-action", targetId: victim.id });
-  if (cop) service.applyAction(room, cop, { type: "night-action", targetId: mafia.id });
-  if (doctor) service.applyAction(room, doctor, { type: "night-action", targetId: doctor.id });
+  service.applyAction(room, mafia, { type: "night-select", targetId: victim.id });
+  service.applyAction(room, mafia, { type: "night-confirm" });
+  if (cop) {
+    service.applyAction(room, cop, { type: "night-select", targetId: mafia.id });
+    service.applyAction(room, cop, { type: "night-confirm" });
+  }
+  if (doctor) {
+    service.applyAction(room, doctor, {
+      type: "night-select",
+      targetId: doctor.id,
+    });
+    service.applyAction(room, doctor, { type: "night-confirm" });
+  }
   return { mafia, cop, doctor, victim };
 }
 
@@ -130,6 +140,48 @@ test("night advances immediately after every required action", () => {
   assert.equal(room.round, 2);
 });
 
+test("night roles select, may change, and then confirm their action", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 6);
+  enterFirstNight(service, room, players, host);
+  const mafia = players.find((player) => player.role === "mafia");
+  const targets = players.filter((player) => player.role !== "mafia");
+
+  service.applyAction(room, mafia, {
+    type: "night-select",
+    targetId: targets[0].id,
+  });
+  let state = service.getState(room, mafia);
+  assert.equal(state.you.selectedTargetId, targets[0].id);
+  assert.equal(state.you.actionSubmitted, false);
+
+  service.applyAction(room, mafia, {
+    type: "night-select",
+    targetId: targets[1].id,
+  });
+  state = service.getState(room, mafia);
+  assert.equal(state.you.selectedTargetId, targets[1].id);
+  assert.equal(state.you.actionSubmitted, false);
+
+  service.applyAction(room, mafia, { type: "night-confirm" });
+  state = service.getState(room, mafia);
+  assert.equal(state.you.actionSubmitted, true);
+  assert.equal(room.phase, "night");
+});
+
+test("the Detective sees the first-night result on the next morning", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 6);
+  enterFirstNight(service, room, players, host);
+  const { mafia, cop } = resolveFirstNight(service, room, players);
+  const state = service.getState(room, cop);
+
+  assert.equal(state.phase, "day");
+  assert.equal(state.round, 2);
+  assert.equal(state.you.investigation.targetName, mafia.name);
+  assert.equal(state.you.investigation.isMafia, true);
+});
+
 test("the night keeps the day vote result visible", () => {
   const service = createGameService();
   const { room, players, host } = addPlayers(service, 6);
@@ -157,7 +209,7 @@ test("Mafia can see team selections while other roles cannot", () => {
   );
 
   service.applyAction(room, mafia[0], {
-    type: "night-action",
+    type: "night-select",
     targetId: target.id,
   });
 
@@ -166,8 +218,17 @@ test("Mafia can see team selections while other roles cannot", () => {
     (current) => current.playerName === mafia[0].name,
   );
   assert.equal(selection.targetName, target.name);
+  assert.equal(selection.confirmed, false);
   assert.equal(teammateState.you.mafiaSelections.length, mafia.length);
   assert.deepEqual(service.getState(room, citizen).you.mafiaSelections, []);
+
+  service.applyAction(room, mafia[0], { type: "night-confirm" });
+  const confirmedSelection = service
+    .getState(room, mafia[1])
+    .you.mafiaSelections.find(
+      (current) => current.playerName === mafia[0].name,
+    );
+  assert.equal(confirmedSelection.confirmed, true);
 });
 
 test("leaving transfers the host and cannot block a phase", () => {

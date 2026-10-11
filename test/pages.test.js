@@ -91,18 +91,26 @@ test("the application keeps localization and responsive styles wired", async () 
 });
 
 test("night UI includes localized Mafia coordination and vote results", async () => {
-  const [night, waiting, screens, i18n, styles] = await Promise.all([
+  const [night, day, waiting, app, screens, i18n, styles] = await Promise.all([
     read("public/templates/night.html"),
+    read("public/templates/day.html"),
     read("public/templates/waiting.html"),
+    read("public/app.js"),
     read("public/js/screens.js"),
     read("public/i18n.js"),
     read("public/style.css"),
   ]);
   assert.match(night, /data-if="mafiaSelections"/);
   assert.match(night, /data-text="announcement"/);
+  assert.match(night, /id="night-confirm"/);
+  assert.match(day, /지난밤 조사 결과/);
+  assert.match(day, /data-if="investigation"/);
   assert.match(waiting, /data-text="announcement"/);
+  assert.match(app, /type: "night-confirm"/);
   assert.match(screens, /mafiaSelectionRows/);
+  assert.match(screens, /targets\("night-select"/);
   assert.match(i18n, /"마피아 선택 현황": "Mafia selections"/);
+  assert.match(i18n, /"지난밤 조사 결과": "Last night's investigation"/);
   assert.match(i18n, /"\(나\)": "\(You\)"/);
   assert.match(styles, /\.mafia-selection-row/);
 });

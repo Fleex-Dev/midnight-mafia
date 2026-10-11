@@ -69,6 +69,9 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
         "selected",
         state().you.selectedTargetId === target.id,
       );
+      if (type === "night-select" && state().you.actionSubmitted) {
+        el.disabled = true;
+      }
       return el;
     });
   }
@@ -90,10 +93,18 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
         player.append(selfLabel);
       }
 
-      const target = document.createElement("strong");
-      target.textContent = selection.targetName || "선택 전";
-      if (selection.targetName) target.setAttribute("translate", "no");
-      else target.className = "pending";
+      const target = document.createElement("div");
+      target.className = "mafia-selection-target";
+      const targetName = document.createElement("strong");
+      targetName.textContent = selection.targetName || "선택 전";
+      if (selection.targetName) targetName.setAttribute("translate", "no");
+      else targetName.className = "pending";
+      target.append(targetName);
+      if (selection.targetName) {
+        const status = document.createElement("small");
+        status.textContent = selection.confirmed ? "확정" : "선택 중";
+        target.append(status);
+      }
 
       row.append(player, target);
       return row;
@@ -225,6 +236,7 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
       investigation: investigation
         ? `${investigation.targetName} · ${investigation.isMafia ? "마피아" : "마피아 아님"}`
         : "",
+      confirm: s.you.actionSubmitted ? "선택 확정 완료" : "선택 확정",
     });
     el.classList.add(`role-${role}`);
     const h = document.createElement("span");
@@ -240,17 +252,24 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     visible(el, "investigation", role === "cop" && !!investigation);
     if (role === "mafia")
       slot(el, "mafiaSelections", mafiaSelectionRows(s.you.mafiaSelections));
-    slot(el, "targets", targets("night-action", verbs[role]));
+    visible(el, "confirm", !!s.you.selectedTargetId);
+    const confirm = el.querySelector("#night-confirm");
+    if (confirm) confirm.disabled = s.you.actionSubmitted;
+    slot(el, "targets", targets("night-select", verbs[role]));
     return el;
   }
   function renderDay() {
     const s = state();
+    const investigation = s.you.investigation;
     const progress = s.openingDay
       ? `${s.dayReadyCount}/${s.dayReadyRequiredCount}명이 밤을 시작할 준비를 마쳤습니다.`
       : `${s.dayReadyCount}/${s.dayReadyRequiredCount}명이 투표할 준비를 마쳤습니다.`;
     const el = view("day", {
       eyebrow: s.openingDay ? `${s.round}번째 낮` : `${s.round}번째 아침`,
       announcement: s.announcement,
+      investigation: investigation
+        ? `${investigation.targetName} · ${investigation.isMafia ? "마피아" : "마피아 아님"}`
+        : "",
       survivors: `생존자 ${s.players.filter((p) => p.alive).length}명`,
       progress,
       action: s.openingDay
@@ -261,6 +280,11 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
           ? "투표 준비 취소"
           : "투표하러 가기",
     });
+    visible(
+      el,
+      "investigation",
+      s.you.role === "cop" && !!investigation && !s.openingDay,
+    );
     visible(el, "alive", s.you.alive);
     visible(el, "dead", !s.you.alive);
     if (s.you.dayReady && s.you.alive) {

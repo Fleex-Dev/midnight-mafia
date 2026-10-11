@@ -185,7 +185,13 @@ function resolveNight(room) {
   const required = alivePlayers(room).filter((player) =>
     ["mafia", "cop", "doctor"].includes(player.role),
   );
-  if (!required.every((player) => room.actions.has(player.id))) return;
+  if (
+    !required.every((player) => {
+      const action = room.actions.get(player.id);
+      return action && action.confirmed !== false;
+    })
+  )
+    return;
 
   const mafia = required.filter((player) => player.role === "mafia");
   const leaders = mostSelected(
@@ -381,7 +387,7 @@ export function createGameService() {
         );
       return;
     }
-    if (type === "night-action") {
+    if (type === "night-select" || type === "night-action") {
       if (room.phase !== "night" || !player.alive)
         throw new GameError("지금은 밤 행동을 할 수 없습니다.");
       if (!["mafia", "cop", "doctor"].includes(player.role))
@@ -392,7 +398,23 @@ export function createGameService() {
         throw new GameError("같은 마피아는 선택할 수 없습니다.");
       if (player.role === "cop" && target.id === player.id)
         throw new GameError("자신은 조사할 수 없습니다.");
-      room.actions.set(player.id, { targetId: target.id });
+      room.actions.set(player.id, {
+        targetId: target.id,
+        // night-action은 배포 전 화면과의 호환을 위한 즉시 확정 요청입니다.
+        confirmed: type === "night-action",
+      });
+      if (type === "night-action") resolveNight(room);
+      return;
+    }
+    if (type === "night-confirm") {
+      if (room.phase !== "night" || !player.alive)
+        throw new GameError("지금은 밤 행동을 할 수 없습니다.");
+      if (!["mafia", "cop", "doctor"].includes(player.role))
+        throw new GameError("이 역할은 밤 행동이 없습니다.");
+      const selection = room.actions.get(player.id);
+      if (!selection?.targetId)
+        throw new GameError("먼저 대상을 선택해 주세요.");
+      room.actions.set(player.id, { ...selection, confirmed: true });
       resolveNight(room);
       return;
     }
@@ -535,6 +557,9 @@ export function createGameService() {
               return {
                 playerName: current.name,
                 targetName: target?.name || "",
+                confirmed: Boolean(
+                  selection && selection.confirmed !== false,
+                ),
                 isSelf: current.id === player.id,
               };
             })
@@ -583,7 +608,7 @@ export function createGameService() {
         ready: player.ready,
         dayReady: room.dayReady.has(player.id),
         isHost: player.id === room.hostId,
-        actionSubmitted: Boolean(action),
+        actionSubmitted: Boolean(action && action.confirmed !== false),
         selectedTargetId: action?.targetId || "",
         investigation: room.investigations.get(player.id),
         mafiaTeam,

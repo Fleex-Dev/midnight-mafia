@@ -1163,6 +1163,15 @@ details .player-list {
   box-shadow: inset 0 -3px 0 rgba(201, 52, 66, 0.48);
 }
 
+.target:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.target.selected:disabled {
+  opacity: 1;
+}
+
 .target span {
   display: grid;
   place-items: center;
@@ -1253,23 +1262,40 @@ details .player-list {
   border-top: 0;
 }
 
-.mafia-selection-row strong {
+.mafia-selection-target {
+  display: grid;
+  justify-items: end;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.mafia-selection-target strong {
   color: #e4d8cb;
   text-align: right;
 }
 
-.mafia-selection-row strong::before {
+.mafia-selection-target strong::before {
   content: "→ ";
   color: var(--red);
 }
 
-.mafia-selection-row strong.pending {
+.mafia-selection-target strong.pending {
   color: #746a62;
   font-weight: 500;
 }
 
+.mafia-selection-target small {
+  color: #8e7f75;
+  font-size: 0.62rem;
+}
+
 .mafia-selection-row.self span {
   color: #d4c5b8;
+}
+
+.night-confirm {
+  width: 100%;
+  margin-top: 0.75rem;
 }
 
 .day-ready-button {

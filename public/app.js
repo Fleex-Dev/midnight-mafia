@@ -764,6 +764,14 @@ function bindGameEvents() {
   // 밤 행동 / 투표 대상 선택
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.action === "night-select") {
+        sendAction({
+          type: "night-select",
+          targetId: button.dataset.id,
+        });
+        return;
+      }
+
       const label = button.querySelector("strong")?.textContent;
 
       if (!label) return;
@@ -778,6 +786,10 @@ function bindGameEvents() {
         targetId: button.dataset.id,
       });
     });
+  });
+
+  document.querySelector("#night-confirm")?.addEventListener("click", () => {
+    sendAction({ type: "night-confirm" });
   });
 
   // 참가자 강퇴
