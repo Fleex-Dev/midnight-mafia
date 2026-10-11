@@ -10,6 +10,13 @@ const phaseLabels = {
   ended: "게임 종료",
 };
 
+function roleWas(name) {
+  const last = name.charCodeAt(name.length - 1);
+  const hasFinalConsonant =
+    last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return `${name}${hasFinalConsonant ? "이었습니다" : "였습니다"}`;
+}
+
 export function createScreens({ getState, getRoleRevealed, roleName }) {
   const state = () => getState();
   function players(revealRoles = false) {
@@ -194,14 +201,21 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     slot(el, "players", players());
     return el;
   }
-  function renderWaiting(title, description, announcement = "") {
+  function renderWaiting(
+    title,
+    description,
+    announcement = "",
+    investigation = "",
+  ) {
     const el = view("waiting", {
       phase: phaseLabels[state().phase],
       title,
       description,
       announcement,
+      investigation,
     });
     visible(el, "announcement", !!announcement);
+    visible(el, "investigation", !!investigation);
     return el;
   }
   function renderNight() {
@@ -215,12 +229,18 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     if (
       s.you.actionSubmitted &&
       (s.you.role !== "mafia" || s.you.mafiaSelections.length < 2)
-    )
+    ) {
+      const investigation =
+        s.you.role === "cop" && s.you.investigation
+          ? `${s.you.investigation.targetName} · ${s.you.investigation.isMafia ? "마피아" : "마피아 아님"}`
+          : "";
       return renderWaiting(
-        "선택을 마쳤습니다",
+        investigation ? "조사 결과" : "선택을 마쳤습니다",
         "다른 역할의 선택이 끝나면 아침이 밝습니다.",
         s.announcement,
+        investigation,
       );
+    }
     if (s.you.role === "citizen")
       return renderWaiting(
         "조용한 밤입니다",
@@ -320,22 +340,37 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
   function renderVoteResult() {
     const s = state();
     const result = s.voteResult;
+    const eliminated = result.eliminated !== false && !!result.role;
     const progress = `${s.resultReadyCount}/${s.resultReadyRequiredCount}명이 결과를 확인했습니다.`;
+    const title = eliminated
+      ? `${result.playerName} 님은 ${roleWas(result.roleName)}.`
+      : "아무도 추방되지 않았습니다.";
+    const reason =
+      result.reason === "tie"
+        ? "최다 득표가 동률입니다."
+        : eliminated
+          ? `${result.topVotes}표를 받아 과반수를 넘었습니다.`
+          : "과반수 득표자가 없습니다.";
+    const tally = `최다 득표 ${result.topVotes}표 · 추방 기준 ${result.requiredVotes}표`;
     const el = view("vote-result", {
-      title: `${result.playerName} 님은 ${result.roleName}였습니다.`,
-      description: "모두 결과를 확인하면 다음 단계로 넘어갑니다.",
+      title,
+      reason,
+      tally,
       action: s.you.resultReady ? "결과 확인 완료" : "결과 확인",
       progress,
     });
-    el.classList.add(`role-${result.role}`);
-    const icon = document.createElement("span");
-    icon.className = "role-svg";
-    icon.style.setProperty(
-      "--icon-url",
-      `url('/icons/game/${ROLE_ICONS[result.role]}')`,
-    );
-    icon.setAttribute("aria-hidden", "true");
-    slot(el, "icon", icon);
+    visible(el, "eliminated", eliminated);
+    if (eliminated) {
+      el.classList.add(`role-${result.role}`);
+      const icon = document.createElement("span");
+      icon.className = "role-svg";
+      icon.style.setProperty(
+        "--icon-url",
+        `url('/icons/game/${ROLE_ICONS[result.role]}')`,
+      );
+      icon.setAttribute("aria-hidden", "true");
+      slot(el, "icon", icon);
+    }
     visible(el, "alive", s.you.alive);
     visible(el, "dead", !s.you.alive);
     const button = el.querySelector("#confirm-vote-result");

@@ -136,6 +136,8 @@ test("votes resolve and determine a winner", () => {
   assert.equal(room.phase, "vote-result");
   assert.equal(room.voteResult.playerName, mafia.name);
   assert.equal(room.voteResult.role, "mafia");
+  assert.equal(room.voteResult.eliminated, true);
+  assert.ok(room.voteResult.topVotes >= room.voteResult.requiredVotes);
   assert.equal(room.winner, null);
   confirmVoteResult(service, room, players);
   assert.equal(room.phase, "ended");
@@ -180,22 +182,141 @@ test("night roles select, may change, and then confirm their action", () => {
   assert.equal(room.phase, "night");
 });
 
-test("the Detective sees both the public night result and private investigation on the next morning", () => {
+test("the Detective sees the private result immediately and keeps it the next morning", () => {
   const service = createGameService();
   const { room, players, host } = addPlayers(service, 6);
   enterFirstNight(service, room, players, host);
-  const { mafia, cop, victim } = resolveFirstNight(service, room, players);
-  const state = service.getState(room, cop);
+  const mafia = players.find((player) => player.role === "mafia");
+  const cop = players.find((player) => player.role === "cop");
+  const doctor = players.find((player) => player.role === "doctor");
+  const victim = players.find((player) => player.role === "citizen");
   const citizen = players.find(
     (player) => player.role === "citizen" && player.id !== victim.id,
   );
 
+  service.applyAction(room, cop, { type: "night-select", targetId: mafia.id });
+  assert.equal(service.getState(room, cop).you.investigation, undefined);
+  service.applyAction(room, cop, { type: "night-confirm" });
+
+  let state = service.getState(room, cop);
+  assert.equal(state.phase, "night");
+  assert.equal(state.you.investigation.targetName, mafia.name);
+  assert.equal(state.you.investigation.isMafia, true);
+  assert.equal(service.getState(room, citizen).you.investigation, undefined);
+
+  service.applyAction(room, mafia, { type: "night-select", targetId: victim.id });
+  service.applyAction(room, mafia, { type: "night-confirm" });
+  service.applyAction(room, doctor, { type: "night-select", targetId: doctor.id });
+  service.applyAction(room, doctor, { type: "night-confirm" });
+
+  state = service.getState(room, cop);
   assert.equal(state.phase, "day");
   assert.equal(state.round, 2);
   assert.match(state.announcement, new RegExp(`^${victim.name} 님이 밤사이`));
   assert.equal(state.you.investigation.targetName, mafia.name);
   assert.equal(state.you.investigation.isMafia, true);
   assert.equal(service.getState(room, citizen).you.investigation, undefined);
+});
+
+test("a tie or a top vote below the majority eliminates nobody", () => {
+  function prepareVote() {
+    const service = createGameService();
+    const { room, players, host } = addPlayers(service, 6);
+    enterFirstNight(service, room, players, host);
+    resolveFirstNight(service, room, players);
+    const alive = players.filter((player) => player.alive);
+    for (const player of alive)
+      service.applyAction(room, player, { type: "set-day-ready", ready: true });
+    return { service, room, players, alive };
+  }
+
+  const tied = prepareVote();
+  const [a, b, c, d, e] = tied.alive;
+  for (const [player, target] of [
+    [a, b],
+    [b, a],
+    [c, a],
+    [d, b],
+    [e, c],
+  ])
+    tied.service.applyAction(tied.room, player, {
+      type: "vote",
+      targetId: target.id,
+    });
+
+  assert.equal(tied.room.phase, "vote-result");
+  assert.equal(tied.room.voteResult.eliminated, false);
+  assert.equal(tied.room.voteResult.reason, "tie");
+  assert.equal(tied.room.voteResult.topVotes, 2);
+  assert.equal(tied.room.voteResult.requiredVotes, 3);
+  assert.equal(tied.alive.every((player) => player.alive), true);
+  confirmVoteResult(tied.service, tied.room, tied.players);
+  assert.equal(tied.room.phase, "night");
+
+  const belowMajority = prepareVote();
+  const [f, g, h, i, j] = belowMajority.alive;
+  for (const [player, target] of [
+    [f, g],
+    [g, f],
+    [h, f],
+    [i, h],
+    [j, i],
+  ])
+    belowMajority.service.applyAction(belowMajority.room, player, {
+      type: "vote",
+      targetId: target.id,
+    });
+
+  assert.equal(belowMajority.room.phase, "vote-result");
+  assert.equal(belowMajority.room.voteResult.eliminated, false);
+  assert.equal(belowMajority.room.voteResult.reason, "no-majority");
+  assert.equal(belowMajority.room.voteResult.topVotes, 2);
+  assert.equal(belowMajority.room.voteResult.requiredVotes, 3);
+  assert.equal(belowMajority.alive.every((player) => player.alive), true);
+});
+
+test("a night result remains visible when the final kill ends the game", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 4);
+  service.applyAction(room, host, {
+    type: "update-settings",
+    copEnabled: false,
+    doctorEnabled: false,
+  });
+  enterFirstNight(service, room, players, host);
+
+  const mafia = players.find((player) => player.role === "mafia");
+  const firstVictim = players.find((player) => player.role === "citizen");
+  service.applyAction(room, mafia, {
+    type: "night-select",
+    targetId: firstVictim.id,
+  });
+  service.applyAction(room, mafia, { type: "night-confirm" });
+
+  const alive = players.filter((player) => player.alive);
+  for (const player of alive)
+    service.applyAction(room, player, { type: "set-day-ready", ready: true });
+  for (let index = 0; index < alive.length; index += 1)
+    service.applyAction(room, alive[index], {
+      type: "vote",
+      targetId: alive[(index + 1) % alive.length].id,
+    });
+  confirmVoteResult(service, room, players);
+
+  const finalVictim = players.find(
+    (player) => player.alive && player.role === "citizen",
+  );
+  service.applyAction(room, mafia, {
+    type: "night-select",
+    targetId: finalVictim.id,
+  });
+  service.applyAction(room, mafia, { type: "night-confirm" });
+
+  assert.equal(room.phase, "ended");
+  assert.equal(room.winner, "mafia");
+  assert.match(room.announcement, new RegExp(finalVictim.name));
+  assert.match(room.announcement, /정체는 시민이었습니다/);
+  assert.match(room.announcement, /마피아 팀 승리/);
 });
 
 test("the vote result remains until every survivor confirms it", () => {
@@ -212,10 +333,8 @@ test("the vote result remains until every survivor confirms it", () => {
   assert.equal(room.phase, "vote-result");
   assert.equal(room.voteResult.playerName, target.name);
   assert.equal(room.voteResult.role, target.role);
-  assert.equal(
-    room.announcement,
-    `${target.name} 님은 ${room.voteResult.roleName}였습니다.`,
-  );
+  assert.match(room.announcement, new RegExp(`^${target.name} 님은 `));
+  assert.match(room.announcement, new RegExp(room.voteResult.roleName));
 
   const survivors = players.filter((player) => player.alive);
   const firstState = service.getState(room, survivors[0]);

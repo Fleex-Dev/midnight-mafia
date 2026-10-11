@@ -129,6 +129,7 @@ const EN = {
   제거: "Eliminate",
   조사: "Investigate",
   보호: "Protect",
+  "조사 결과": "Investigation result",
   "지난 조사": "Last investigation",
   "지난밤 조사 결과": "Last night's investigation",
   "마피아 아님": "Not Mafia",
@@ -147,6 +148,9 @@ const EN = {
   투표했습니다: "Vote submitted",
   "낮 투표": "Day vote",
   "낮 투표 결과": "Day vote result",
+  "아무도 추방되지 않았습니다.": "No one was eliminated.",
+  "최다 득표가 동률입니다.": "The top vote is tied.",
+  "과반수 득표자가 없습니다.": "No player received a majority.",
   "결과 확인": "Confirm result",
   "결과 확인 완료": "Result confirmed",
   "결과 확인 중": "Reviewing result",
@@ -304,7 +308,12 @@ function dynamicEnglish(text) {
   if ((match = text.match(/^(\d+)라운드$/))) return `Round ${match[1]}`;
   if ((match = text.match(/^(마피아|경찰|의사|시민) · 감추기$/)))
     return `${EN[match[1]]} · Hide`;
-  if ((match = text.match(/^(\d+)차 재투표$/))) return `Revote ${match[1]}`;
+  if ((match = text.match(/^(\d+)표를 받아 과반수를 넘었습니다\.$/)))
+    return `${match[1]} votes reached the majority.`;
+  if (
+    (match = text.match(/^최다 득표 (\d+)표 · 추방 기준 (\d+)표$/))
+  )
+    return `Top vote: ${match[1]} · ${match[2]} needed to eliminate`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 선택을 마쳤습니다\.$/)))
     return `${match[1]} of ${match[2]} players have chosen.`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 결과를 확인했습니다\.$/)))
@@ -321,7 +330,7 @@ function dynamicEnglish(text) {
     return `Night ${match[1]}. Choose your action on your own screen.`;
   if (
     (match = text.match(
-      /^(.+) 님이 밤사이 사라졌습니다\. 정체는 (.+)였습니다\.$/,
+      /^(.+) 님이 밤사이 사라졌습니다\. 정체는 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/,
     ))
   )
     return `${match[1]} disappeared overnight. Their role was ${EN[match[2]] || match[2]}.`;
@@ -333,16 +342,16 @@ function dynamicEnglish(text) {
     return `${match[1]} was eliminated by vote. Their role was ${EN[match[2]] || match[2]}.`;
   if (
     (match = text.match(
-      /^(.+) 님은 (마피아|경찰|의사|시민)였습니다\.$/,
+      /^(.+) 님은 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/,
     ))
   )
     return `${match[1]} was ${EN[match[2]] || match[2]}.`;
   if (
     (match = text.match(
-      /^(.+) 님이 동률입니다\. 살아 있는 모두가 다시 투표해 주세요\.$/,
+      /^(.+) 님이 밤사이 사라졌습니다\. 정체는 (마피아|경찰|의사|시민)(?:이)?었습니다\. (모든 마피아를 찾아냈습니다\. 시민 팀 승리!|마피아가 마을을 장악했습니다\. 마피아 팀 승리!)$/,
     ))
   )
-    return `${match[1]} are tied. All living players must vote again.`;
+    return `${match[1]} disappeared overnight. Their role was ${EN[match[2]] || match[2]}. ${EN[match[3]] || match[3]}`;
   return text;
 }
 

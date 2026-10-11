@@ -117,7 +117,10 @@ test("night UI includes localized Mafia coordination and vote results", async ()
   assert.match(day, /data-text="announcement"/);
   assert.match(voteResult, /id="confirm-vote-result"/);
   assert.match(voteResult, /data-text="title"/);
+  assert.match(voteResult, /data-if="eliminated"/);
+  assert.match(voteResult, /data-text="tally"/);
   assert.match(waiting, /data-text="announcement"/);
+  assert.match(waiting, /data-if="investigation"/);
   assert.match(app, /type: "night-confirm"/);
   assert.match(app, /type: "confirm-vote-result"/);
   assert.match(app, /"vote-result": screens\.renderVoteResult/);
@@ -125,6 +128,7 @@ test("night UI includes localized Mafia coordination and vote results", async ()
   assert.match(screens, /targets\("night-select"/);
   assert.match(i18n, /"마피아 선택 현황": "Mafia selections"/);
   assert.match(i18n, /"지난밤 조사 결과": "Last night's investigation"/);
+  assert.match(i18n, /"조사 결과": "Investigation result"/);
   assert.match(i18n, /"\(나\)": "\(You\)"/);
   assert.match(styles, /\.mafia-selection-row/);
 });

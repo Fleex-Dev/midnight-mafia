@@ -133,23 +133,53 @@ function mostSelected(entries) {
     .map(([id]) => id);
 }
 
-function checkWinner(room) {
+function roleWas(role) {
+  const name = ROLE_INFO[role].name;
+  const last = name.charCodeAt(name.length - 1);
+  const hasFinalConsonant =
+    last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  return `${name}${hasFinalConsonant ? "이었습니다" : "였습니다"}`;
+}
+
+function checkWinner(room, precedingAnnouncement = "") {
   const alive = alivePlayers(room);
   const mafia = alive.filter((player) => player.role === "mafia").length;
   const citizens = alive.length - mafia;
   if (mafia === 0) {
     room.phase = "ended";
     room.winner = "citizen";
-    room.announcement = "모든 마피아를 찾아냈습니다. 시민 팀 승리!";
+    room.announcement = [
+      precedingAnnouncement,
+      "모든 마피아를 찾아냈습니다. 시민 팀 승리!",
+    ]
+      .filter(Boolean)
+      .join(" ");
     return true;
   }
   if (mafia >= citizens) {
     room.phase = "ended";
     room.winner = "mafia";
-    room.announcement = "마피아가 마을을 장악했습니다. 마피아 팀 승리!";
+    room.announcement = [
+      precedingAnnouncement,
+      "마피아가 마을을 장악했습니다. 마피아 팀 승리!",
+    ]
+      .filter(Boolean)
+      .join(" ");
     return true;
   }
   return false;
+}
+
+function recordInvestigation(room, player, action) {
+  if (player.role !== "cop" || !action?.targetId || action.confirmed === false)
+    return;
+  const target = room.players.get(action.targetId);
+  if (!target) return;
+  room.investigations.set(player.id, {
+    round: room.round,
+    targetName: target.name,
+    isMafia: target.role === "mafia",
+  });
 }
 
 function beginNight(room) {
@@ -215,53 +245,72 @@ function resolveNight(room) {
   const doctor = required.find((player) => player.role === "doctor");
   const protectedId = doctor ? room.actions.get(doctor.id)?.targetId : null;
   const cop = required.find((player) => player.role === "cop");
-  if (cop) {
-    const target = room.players.get(room.actions.get(cop.id)?.targetId);
-    room.investigations.set(cop.id, {
-      round: room.round,
-      targetName: target.name,
-      isMafia: target.role === "mafia",
-    });
-  }
+  if (cop) recordInvestigation(room, cop, room.actions.get(cop.id));
 
+  let nightResult;
   if (victim && victim.id !== protectedId) {
     victim.alive = false;
-    room.announcement = `${victim.name} 님이 밤사이 사라졌습니다. 정체는 ${ROLE_INFO[victim.role].name}였습니다.`;
+    nightResult = `${victim.name} 님이 밤사이 사라졌습니다. 정체는 ${roleWas(victim.role)}.`;
   } else {
-    room.announcement =
+    nightResult =
       "평온한 아침입니다. 지난밤에는 아무도 사라지지 않았습니다.";
   }
+  room.announcement = nightResult;
   room.actions.clear();
-  if (!checkWinner(room)) beginDay(room);
+  if (!checkWinner(room, nightResult)) beginDay(room);
 }
 
 function resolveVote(room) {
   const alive = alivePlayers(room);
   if (!alive.every((player) => room.actions.has(player.id))) return;
-  const leaders = mostSelected(
-    alive.map((player) => room.actions.get(player.id)),
-  );
+  const votes = alive.map((player) => room.actions.get(player.id));
+  const leaders = mostSelected(votes);
+  const counts = new Map();
+  for (const vote of votes)
+    counts.set(vote.targetId, (counts.get(vote.targetId) || 0) + 1);
+  const topVotes = Math.max(...counts.values());
+  const requiredVotes = Math.floor(alive.length / 2) + 1;
   room.actions.clear();
+
+  room.phase = "vote-result";
+  room.resultReady.clear();
   if (leaders.length > 1) {
-    room.voteRound += 1;
-    const names = leaders
-      .map((id) => room.players.get(id)?.name)
-      .filter(Boolean)
-      .join(", ");
-    room.announcement = `${names} 님이 동률입니다. 살아 있는 모두가 다시 투표해 주세요.`;
+    room.voteResult = {
+      eliminated: false,
+      reason: "tie",
+      topVotes,
+      requiredVotes,
+    };
+    room.announcement =
+      "최다 득표가 동률이어서 아무도 추방되지 않았습니다.";
     return;
   }
+
+  if (topVotes < requiredVotes) {
+    room.voteResult = {
+      eliminated: false,
+      reason: "no-majority",
+      topVotes,
+      requiredVotes,
+    };
+    room.announcement =
+      "과반수 득표자가 없어 아무도 추방되지 않았습니다.";
+    return;
+  }
+
   const eliminated = room.players.get(leaders[0]);
   eliminated.alive = false;
-  room.phase = "vote-result";
   room.voteResult = {
+    eliminated: true,
+    reason: "majority",
     playerId: eliminated.id,
     playerName: eliminated.name,
     role: eliminated.role,
     roleName: ROLE_INFO[eliminated.role].name,
+    topVotes,
+    requiredVotes,
   };
-  room.resultReady.clear();
-  room.announcement = `${eliminated.name} 님은 ${ROLE_INFO[eliminated.role].name}였습니다.`;
+  room.announcement = `${eliminated.name} 님은 ${roleWas(eliminated.role)}.`;
 }
 
 export function createGameService() {
@@ -416,7 +465,10 @@ export function createGameService() {
         // night-action은 배포 전 화면과의 호환을 위한 즉시 확정 요청입니다.
         confirmed: type === "night-action",
       });
-      if (type === "night-action") resolveNight(room);
+      if (type === "night-action") {
+        recordInvestigation(room, player, room.actions.get(player.id));
+        resolveNight(room);
+      }
       return;
     }
     if (type === "night-confirm") {
@@ -428,6 +480,7 @@ export function createGameService() {
       if (!selection?.targetId)
         throw new GameError("먼저 대상을 선택해 주세요.");
       room.actions.set(player.id, { ...selection, confirmed: true });
+      recordInvestigation(room, player, room.actions.get(player.id));
       resolveNight(room);
       return;
     }
