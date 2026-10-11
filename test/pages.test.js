@@ -95,11 +95,12 @@ test("the application keeps localization and responsive styles wired", async () 
   assert.match(styles, /@media \(max-width: 600px\)/);
 });
 
-test("night UI includes localized Mafia coordination and vote results", async () => {
-  const [night, day, voteResult, waiting, app, screens, i18n, styles] =
+test("phase UI includes confirmation flows, Mafia coordination, and vote results", async () => {
+  const [night, day, vote, voteResult, waiting, app, screens, i18n, styles] =
     await Promise.all([
       read("public/templates/night.html"),
       read("public/templates/day.html"),
+      read("public/templates/vote.html"),
       read("public/templates/vote-result.html"),
       read("public/templates/waiting.html"),
       read("public/app.js"),
@@ -115,6 +116,8 @@ test("night UI includes localized Mafia coordination and vote results", async ()
   assert.match(day, /지난밤 조사 결과/);
   assert.match(day, /data-if="investigation"/);
   assert.match(day, /data-text="announcement"/);
+  assert.match(vote, /id="vote-confirm"/);
+  assert.match(vote, /class="phase-alerts"/);
   assert.match(voteResult, /id="confirm-vote-result"/);
   assert.match(voteResult, /data-text="title"/);
   assert.match(voteResult, /data-if="eliminated"/);
@@ -122,13 +125,18 @@ test("night UI includes localized Mafia coordination and vote results", async ()
   assert.match(waiting, /data-text="announcement"/);
   assert.match(waiting, /data-if="investigation"/);
   assert.match(app, /type: "night-confirm"/);
+  assert.match(app, /type: "vote-confirm"/);
   assert.match(app, /type: "confirm-vote-result"/);
   assert.match(app, /"vote-result": screens\.renderVoteResult/);
   assert.match(screens, /mafiaSelectionRows/);
   assert.match(screens, /targets\("night-select"/);
+  assert.match(screens, /targets\("vote-select"/);
   assert.match(i18n, /"마피아 선택 현황": "Mafia selections"/);
   assert.match(i18n, /"지난밤 조사 결과": "Last night's investigation"/);
   assert.match(i18n, /"조사 결과": "Investigation result"/);
   assert.match(i18n, /"\(나\)": "\(You\)"/);
+  assert.match(i18n, /"투표 확정": "Confirm vote"/);
   assert.match(styles, /\.mafia-selection-row/);
+  assert.match(styles, /\.mafia-selection-status/);
+  assert.match(styles, /\.phase-alerts/);
 });

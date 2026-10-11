@@ -122,6 +122,52 @@ test("all living players prepare before voting and may cancel", () => {
   assert.equal(room.phase, "vote");
 });
 
+test("day votes may change before confirmation and resolve only after confirmation", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 6);
+  enterFirstNight(service, room, players, host);
+  resolveFirstNight(service, room, players);
+  const alive = players.filter((player) => player.alive);
+  for (const player of alive)
+    service.applyAction(room, player, { type: "set-day-ready", ready: true });
+
+  const voter = alive[0];
+  const firstTarget = alive.find((player) => player.id !== voter.id);
+  const changedTarget = alive.find(
+    (player) => player.id !== voter.id && player.id !== firstTarget.id,
+  );
+  service.applyAction(room, voter, {
+    type: "vote-select",
+    targetId: firstTarget.id,
+  });
+  service.applyAction(room, voter, {
+    type: "vote-select",
+    targetId: changedTarget.id,
+  });
+
+  let state = service.getState(room, voter);
+  assert.equal(state.you.selectedTargetId, changedTarget.id);
+  assert.equal(state.you.actionSubmitted, false);
+  assert.equal(state.submittedCount, 0);
+  assert.equal(room.phase, "vote");
+
+  service.applyAction(room, voter, { type: "vote-confirm" });
+  state = service.getState(room, voter);
+  assert.equal(state.you.actionSubmitted, true);
+  assert.equal(state.submittedCount, 1);
+  assert.equal(room.phase, "vote");
+
+  for (const player of alive.slice(1)) {
+    service.applyAction(room, player, {
+      type: "vote-select",
+      targetId: player.id === changedTarget.id ? voter.id : changedTarget.id,
+    });
+    service.applyAction(room, player, { type: "vote-confirm" });
+  }
+  assert.equal(room.phase, "vote-result");
+  assert.equal(room.voteResult.playerId, changedTarget.id);
+});
+
 test("votes resolve and determine a winner", () => {
   const service = createGameService();
   const { room, players, host } = addPlayers(service);

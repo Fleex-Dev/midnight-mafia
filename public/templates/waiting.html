@@ -1,1 +1,16 @@
-<section class="panel centered-panel"><div class="pulse-orbit"><span></span></div><p class="eyebrow" data-text="phase"></p><h1 data-text="title"></h1><div class="announcement compact" data-if="announcement" data-text="announcement"></div><div class="result-card" data-if="investigation"><span>조사 결과</span><strong data-text="investigation"></strong></div><p class="intro" data-text="description"></p></section>
+<section class="panel centered-panel phase-panel">
+  <p class="eyebrow" data-text="phase"></p>
+  <h1 data-text="title"></h1>
+  <div class="phase-alerts" data-if="alerts">
+    <div
+      class="announcement"
+      data-if="announcement"
+      data-text="announcement"
+    ></div>
+    <div class="result-card" data-if="investigation">
+      <span>조사 결과</span><strong data-text="investigation"></strong>
+    </div>
+  </div>
+  <div class="pulse-orbit"><span></span></div>
+  <p class="intro" data-text="description"></p>
+</section>

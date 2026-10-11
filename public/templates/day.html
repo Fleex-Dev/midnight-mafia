@@ -1,10 +1,12 @@
-<section class="panel day-panel">
+<section class="panel day-panel phase-panel">
   <p class="eyebrow" data-text="eyebrow"></p>
   <h1>서로의 이야기를<br />들어보세요.</h1>
-  <div class="announcement" data-text="announcement"></div>
-  <div class="result-card" data-if="investigation">
-    <span>지난밤 조사 결과</span>
-    <strong data-text="investigation"></strong>
+  <div class="phase-alerts" data-if="alerts">
+    <div class="announcement" data-text="announcement"></div>
+    <div class="result-card" data-if="investigation">
+      <span>지난밤 조사 결과</span>
+      <strong data-text="investigation"></strong>
+    </div>
   </div>
   <h2 class="list-title" data-text="survivors"></h2>
   <ul class="player-list" data-slot="players"></ul>

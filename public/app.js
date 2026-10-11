@@ -777,9 +777,9 @@ function bindGameEvents() {
   // 밤 행동 / 투표 대상 선택
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
-      if (button.dataset.action === "night-select") {
+      if (["night-select", "vote-select"].includes(button.dataset.action)) {
         sendAction({
-          type: "night-select",
+          type: button.dataset.action,
           targetId: button.dataset.id,
         });
         return;
@@ -803,6 +803,10 @@ function bindGameEvents() {
 
   document.querySelector("#night-confirm")?.addEventListener("click", () => {
     sendAction({ type: "night-confirm" });
+  });
+
+  document.querySelector("#vote-confirm")?.addEventListener("click", () => {
+    sendAction({ type: "vote-confirm" });
   });
 
   document

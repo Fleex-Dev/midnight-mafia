@@ -262,7 +262,13 @@ function resolveNight(room) {
 
 function resolveVote(room) {
   const alive = alivePlayers(room);
-  if (!alive.every((player) => room.actions.has(player.id))) return;
+  if (
+    !alive.every((player) => {
+      const action = room.actions.get(player.id);
+      return action && action.confirmed !== false;
+    })
+  )
+    return;
   const votes = alive.map((player) => room.actions.get(player.id));
   const leaders = mostSelected(votes);
   const counts = new Map();
@@ -497,13 +503,27 @@ export function createGameService() {
       }
       return;
     }
-    if (type === "vote") {
+    if (type === "vote-select" || type === "vote") {
       if (room.phase !== "vote" || !player.alive)
         throw new GameError("지금은 투표할 수 없습니다.");
       const target = room.players.get(String(action.targetId || ""));
       if (!target?.alive || target.id === player.id)
         throw new GameError("선택할 수 없는 대상입니다.");
-      room.actions.set(player.id, { targetId: target.id });
+      room.actions.set(player.id, {
+        targetId: target.id,
+        // vote는 배포 전 화면과의 호환을 위한 즉시 확정 요청입니다.
+        confirmed: type === "vote",
+      });
+      if (type === "vote") resolveVote(room);
+      return;
+    }
+    if (type === "vote-confirm") {
+      if (room.phase !== "vote" || !player.alive)
+        throw new GameError("지금은 투표할 수 없습니다.");
+      const selection = room.actions.get(player.id);
+      if (!selection?.targetId)
+        throw new GameError("먼저 투표할 사람을 선택해 주세요.");
+      room.actions.set(player.id, { ...selection, confirmed: true });
       resolveVote(room);
       return;
     }
@@ -732,7 +752,12 @@ export function createGameService() {
       dayReadyCount: room.phase === "day" ? room.dayReady.size : undefined,
       dayReadyRequiredCount:
         room.phase === "day" ? alivePlayers(room).length : undefined,
-      submittedCount: room.phase === "vote" ? room.actions.size : undefined,
+      submittedCount:
+        room.phase === "vote"
+          ? [...room.actions.values()].filter(
+              (current) => current.confirmed !== false,
+            ).length
+          : undefined,
       requiredCount:
         room.phase === "vote" ? alivePlayers(room).length : undefined,
       resultReadyCount:

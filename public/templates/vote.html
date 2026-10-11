@@ -1,1 +1,17 @@
-<section class="panel action-panel vote-panel"><p class="eyebrow" data-text="eyebrow"></p><h1>누가 가장<br>의심스럽나요?</h1><div class="announcement compact" data-text="announcement"></div><div class="target-grid" data-slot="targets"></div><p class="privacy-note">내 선택은 결과가 나올 때까지 비공개입니다.</p></section>
+<section class="panel action-panel vote-panel phase-panel">
+  <p class="eyebrow" data-text="eyebrow"></p>
+  <h1>누가 가장<br />의심스럽나요?</h1>
+  <div class="phase-alerts">
+    <div class="announcement" data-text="announcement"></div>
+  </div>
+  <div class="target-grid" data-slot="targets"></div>
+  <button
+    id="vote-confirm"
+    class="button primary phase-confirm"
+    data-if="confirm"
+    data-text="confirm"
+  ></button>
+  <p class="privacy-note">
+    대상을 고른 뒤 투표를 확정하세요. 확정 전에는 선택을 바꿀 수 있습니다.
+  </p>
+</section>

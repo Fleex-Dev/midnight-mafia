@@ -79,7 +79,10 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
         "selected",
         state().you.selectedTargetId === target.id,
       );
-      if (type === "night-select" && state().you.actionSubmitted) {
+      if (
+        ["night-select", "vote-select"].includes(type) &&
+        state().you.actionSubmitted
+      ) {
         el.disabled = true;
       }
       return el;
@@ -92,7 +95,8 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
       row.className = "mafia-selection-row";
       row.classList.toggle("self", selection.isSelf);
 
-      const player = document.createElement("span");
+      const player = document.createElement("div");
+      player.className = "mafia-selection-player";
       const playerName = document.createElement("span");
       playerName.textContent = selection.playerName;
       playerName.setAttribute("translate", "no");
@@ -105,18 +109,24 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
 
       const target = document.createElement("div");
       target.className = "mafia-selection-target";
+      const targetLabel = document.createElement("small");
+      targetLabel.textContent = "선택 대상";
       const targetName = document.createElement("strong");
-      targetName.textContent = selection.targetName || "선택 전";
+      targetName.textContent = selection.targetName || "아직 선택하지 않음";
       if (selection.targetName) targetName.setAttribute("translate", "no");
       else targetName.className = "pending";
-      target.append(targetName);
-      if (selection.targetName) {
-        const status = document.createElement("small");
-        status.textContent = selection.confirmed ? "확정" : "선택 중";
-        target.append(status);
-      }
+      target.append(targetLabel, targetName);
 
-      row.append(player, target);
+      const status = document.createElement("span");
+      status.className = "mafia-selection-status";
+      status.classList.toggle("confirmed", selection.confirmed);
+      status.textContent = selection.confirmed
+        ? "확정"
+        : selection.targetName
+          ? "선택 중"
+          : "대기";
+
+      row.append(player, target, status);
       return row;
     });
   }
@@ -216,6 +226,7 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     });
     visible(el, "announcement", !!announcement);
     visible(el, "investigation", !!investigation);
+    visible(el, "alerts", !!announcement || !!investigation);
     return el;
   }
   function renderNight() {
@@ -273,6 +284,13 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
       role === "mafia" && s.you.mafiaSelections.length > 1,
     );
     visible(el, "investigation", role === "cop" && !!investigation);
+    visible(
+      el,
+      "alerts",
+      !!s.announcement ||
+        (role === "mafia" && !!s.you.privateNotice) ||
+        (role === "cop" && !!investigation),
+    );
     if (role === "mafia")
       slot(el, "mafiaSelections", mafiaSelectionRows(s.you.mafiaSelections));
     visible(el, "confirm", !!s.you.selectedTargetId);
@@ -308,6 +326,7 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
       "investigation",
       s.you.role === "cop" && !!investigation && !s.openingDay,
     );
+    visible(el, "alerts", !!s.announcement || !!investigation);
     visible(el, "alive", s.you.alive);
     visible(el, "dead", !s.you.alive);
     if (s.you.dayReady && s.you.alive) {
@@ -331,10 +350,12 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
         `${s.submittedCount}/${s.requiredCount}명이 선택을 마쳤습니다.`,
       );
     const el = view("vote", {
-      eyebrow: s.voteRound > 1 ? `${s.voteRound}차 재투표` : "낮 투표",
+      eyebrow: "낮 투표",
       announcement: s.announcement,
+      confirm: s.you.selectedTargetId ? "투표 확정" : "대상을 먼저 선택하세요",
     });
-    slot(el, "targets", targets("vote", "투표"));
+    visible(el, "confirm", !!s.you.selectedTargetId);
+    slot(el, "targets", targets("vote-select", "선택"));
     return el;
   }
   function renderVoteResult() {
