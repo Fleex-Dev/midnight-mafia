@@ -169,17 +169,22 @@ test("night roles select, may change, and then confirm their action", () => {
   assert.equal(room.phase, "night");
 });
 
-test("the Detective sees the first-night result on the next morning", () => {
+test("the Detective sees both the public night result and private investigation on the next morning", () => {
   const service = createGameService();
   const { room, players, host } = addPlayers(service, 6);
   enterFirstNight(service, room, players, host);
-  const { mafia, cop } = resolveFirstNight(service, room, players);
+  const { mafia, cop, victim } = resolveFirstNight(service, room, players);
   const state = service.getState(room, cop);
+  const citizen = players.find(
+    (player) => player.role === "citizen" && player.id !== victim.id,
+  );
 
   assert.equal(state.phase, "day");
   assert.equal(state.round, 2);
+  assert.match(state.announcement, new RegExp(`^${victim.name} 님이 밤사이`));
   assert.equal(state.you.investigation.targetName, mafia.name);
   assert.equal(state.you.investigation.isMafia, true);
+  assert.equal(service.getState(room, citizen).you.investigation, undefined);
 });
 
 test("the night keeps the day vote result visible", () => {

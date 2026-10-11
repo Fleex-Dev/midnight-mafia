@@ -102,9 +102,12 @@ test("night UI includes localized Mafia coordination and vote results", async ()
   ]);
   assert.match(night, /data-if="mafiaSelections"/);
   assert.match(night, /data-text="announcement"/);
+  assert.match(night, /data-if="notice"/);
+  assert.match(night, /data-if="investigation"/);
   assert.match(night, /id="night-confirm"/);
   assert.match(day, /지난밤 조사 결과/);
   assert.match(day, /data-if="investigation"/);
+  assert.match(day, /data-text="announcement"/);
   assert.match(waiting, /data-text="announcement"/);
   assert.match(app, /type: "night-confirm"/);
   assert.match(screens, /mafiaSelectionRows/);
