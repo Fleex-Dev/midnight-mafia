@@ -5,6 +5,7 @@ const EN = {
   밤: "Night",
   낮: "Day",
   투표: "Vote",
+  "투표 결과": "Vote result",
   "게임 종료": "Game over",
   "진행 상태": "Game status",
   "게임 시작 전": "Before the game",
@@ -145,6 +146,12 @@ const EN = {
   "탈락한 사람은 투표할 수 없습니다.": "Eliminated players cannot vote.",
   투표했습니다: "Vote submitted",
   "낮 투표": "Day vote",
+  "낮 투표 결과": "Day vote result",
+  "결과 확인": "Confirm result",
+  "결과 확인 완료": "Result confirmed",
+  "결과 확인 중": "Reviewing result",
+  "모두 결과를 확인하면 다음 단계로 넘어갑니다.":
+    "The next phase begins after everyone reviews the result.",
   "누가 가장": "Who is the most",
   "의심스럽나요?": "suspicious?",
   "내 선택은 결과가 나올 때까지 비공개입니다.":
@@ -230,6 +237,10 @@ const EN = {
   "지금은 투표를 준비할 수 없습니다.": "You cannot get ready to vote now.",
   "지금은 투표를 시작할 수 없습니다.": "Voting cannot start now.",
   "지금은 투표할 수 없습니다.": "You cannot vote now.",
+  "지금은 투표 결과를 확인할 수 없습니다.":
+    "The vote result cannot be confirmed now.",
+  "탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.":
+    "Eliminated players are not included in the confirmation count.",
   "탈락한 참가자는 투표를 준비할 수 없습니다.":
     "Eliminated players cannot get ready to vote.",
   "참가 정보를 확인할 수 없습니다.":
@@ -296,6 +307,8 @@ function dynamicEnglish(text) {
   if ((match = text.match(/^(\d+)차 재투표$/))) return `Revote ${match[1]}`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 선택을 마쳤습니다\.$/)))
     return `${match[1]} of ${match[2]} players have chosen.`;
+  if ((match = text.match(/^(\d+)\/(\d+)명이 결과를 확인했습니다\.$/)))
+    return `${match[1]} of ${match[2]} players have reviewed the result.`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 투표할 준비를 마쳤습니다\.$/)))
     return `${match[1]} of ${match[2]} players are ready to vote.`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 밤을 시작할 준비를 마쳤습니다\.$/)))
@@ -318,6 +331,12 @@ function dynamicEnglish(text) {
     ))
   )
     return `${match[1]} was eliminated by vote. Their role was ${EN[match[2]] || match[2]}.`;
+  if (
+    (match = text.match(
+      /^(.+) 님은 (마피아|경찰|의사|시민)였습니다\.$/,
+    ))
+  )
+    return `${match[1]} was ${EN[match[2]] || match[2]}.`;
   if (
     (match = text.match(
       /^(.+) 님이 동률입니다\. 살아 있는 모두가 다시 투표해 주세요\.$/,

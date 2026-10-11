@@ -152,14 +152,14 @@ function checkWinner(room) {
   return false;
 }
 
-function beginNight(room, announcement = "") {
+function beginNight(room) {
   room.phase = "night";
   room.openingDay = false;
   room.actions.clear();
   room.dayReady.clear();
-  room.announcement =
-    announcement ||
-    `${room.round}번째 밤입니다. 각자의 화면에서 행동을 선택하세요.`;
+  room.resultReady.clear();
+  room.voteResult = null;
+  room.announcement = `${room.round}번째 밤입니다. 각자의 화면에서 행동을 선택하세요.`;
 }
 
 function beginDay(room, announcement = "", openingDay = false) {
@@ -168,6 +168,7 @@ function beginDay(room, announcement = "", openingDay = false) {
   room.openingDay = openingDay;
   room.actions.clear();
   room.dayReady.clear();
+  room.resultReady.clear();
   if (announcement) room.announcement = announcement;
 }
 
@@ -179,6 +180,8 @@ function beginVote(room) {
   });
   room.actions.clear();
   room.dayReady.clear();
+  room.resultReady.clear();
+  room.voteResult = null;
 }
 
 function resolveNight(room) {
@@ -250,9 +253,15 @@ function resolveVote(room) {
   }
   const eliminated = room.players.get(leaders[0]);
   eliminated.alive = false;
-  const announcement = `${eliminated.name} 님이 투표로 지목됐습니다. 정체는 ${ROLE_INFO[eliminated.role].name}였습니다.`;
-  room.announcement = announcement;
-  if (!checkWinner(room)) beginNight(room, announcement);
+  room.phase = "vote-result";
+  room.voteResult = {
+    playerId: eliminated.id,
+    playerName: eliminated.name,
+    role: eliminated.role,
+    roleName: ROLE_INFO[eliminated.role].name,
+  };
+  room.resultReady.clear();
+  room.announcement = `${eliminated.name} 님은 ${ROLE_INFO[eliminated.role].name}였습니다.`;
 }
 
 export function createGameService() {
@@ -287,8 +296,10 @@ export function createGameService() {
       players: new Map([[host.id, host]]),
       actions: new Map(),
       dayReady: new Set(),
+      resultReady: new Set(),
       investigations: new Map(),
       privateNotices: new Map(),
+      voteResult: null,
       joinUrl: "",
       settings: {
         copEnabled: true,
@@ -372,7 +383,9 @@ export function createGameService() {
       });
       room.actions.clear();
       room.dayReady.clear();
+      room.resultReady.clear();
       room.investigations.clear();
+      room.voteResult = null;
       return;
     }
     if (type === "ready") {
@@ -441,6 +454,21 @@ export function createGameService() {
       resolveVote(room);
       return;
     }
+    if (type === "confirm-vote-result") {
+      if (room.phase !== "vote-result")
+        throw new GameError("지금은 투표 결과를 확인할 수 없습니다.");
+      if (!player.alive)
+        throw new GameError("탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.");
+      room.resultReady.add(player.id);
+      if (
+        alivePlayers(room).every((current) =>
+          room.resultReady.has(current.id),
+        )
+      ) {
+        if (!checkWinner(room)) beginNight(room);
+      }
+      return;
+    }
     if (type === "kick") {
       requireHost(room, player);
       if (room.phase !== "lobby")
@@ -467,8 +495,10 @@ export function createGameService() {
       });
       room.actions.clear();
       room.dayReady.clear();
+      room.resultReady.clear();
       room.investigations.clear();
       room.privateNotices.clear();
+      room.voteResult = null;
       for (const current of room.players.values()) {
         current.role = null;
         current.alive = true;
@@ -486,6 +516,7 @@ export function createGameService() {
     room.players.delete(player.id);
     room.actions.delete(player.id);
     room.dayReady.delete(player.id);
+    room.resultReady.delete(player.id);
     room.investigations.delete(player.id);
     room.privateNotices.delete(player.id);
     for (const [actorId, action] of room.actions) {
@@ -511,6 +542,16 @@ export function createGameService() {
     }
 
     if (room.phase === "lobby" || room.phase === "ended") return true;
+    if (room.phase === "vote-result") {
+      if (
+        alivePlayers(room).every((current) =>
+          room.resultReady.has(current.id),
+        )
+      ) {
+        if (!checkWinner(room)) beginNight(room);
+      }
+      return true;
+    }
     if (checkWinner(room)) return true;
 
     if (room.phase === "reveal") {
@@ -589,6 +630,7 @@ export function createGameService() {
       openingDay: Boolean(room.openingDay),
       winner: room.winner,
       announcement: room.announcement,
+      voteResult: room.phase === "vote-result" ? room.voteResult : null,
       joinUrl: room.joinUrl,
       qrDataUrl:
         room.phase === "lobby" && room.joinUrl
@@ -607,6 +649,7 @@ export function createGameService() {
         alive: player.alive,
         ready: player.ready,
         dayReady: room.dayReady.has(player.id),
+        resultReady: room.resultReady.has(player.id),
         isHost: player.id === room.hostId,
         actionSubmitted: Boolean(action && action.confirmed !== false),
         selectedTargetId: action?.targetId || "",
@@ -625,6 +668,10 @@ export function createGameService() {
           room.phase === "day" && current.alive
             ? room.dayReady.has(current.id)
             : undefined,
+        resultReady:
+          room.phase === "vote-result" && current.alive
+            ? room.resultReady.has(current.id)
+            : undefined,
         isHost: current.id === room.hostId,
         connected: connectedIds.has(current.id),
         role: room.phase === "ended" ? current.role : undefined,
@@ -635,6 +682,10 @@ export function createGameService() {
       submittedCount: room.phase === "vote" ? room.actions.size : undefined,
       requiredCount:
         room.phase === "vote" ? alivePlayers(room).length : undefined,
+      resultReadyCount:
+        room.phase === "vote-result" ? room.resultReady.size : undefined,
+      resultReadyRequiredCount:
+        room.phase === "vote-result" ? alivePlayers(room).length : undefined,
     };
   }
 
@@ -660,6 +711,7 @@ export function createGameService() {
           players: [...room.players.entries()],
           actions: [...room.actions.entries()],
           dayReady: [...room.dayReady],
+          resultReady: [...room.resultReady],
           investigations: [...room.investigations.entries()],
           privateNotices: [...room.privateNotices.entries()],
         };
@@ -683,6 +735,7 @@ export function createGameService() {
         players: new Map(saved.players),
         actions: new Map(saved.actions || []),
         dayReady: new Set(saved.dayReady || []),
+        resultReady: new Set(saved.resultReady || []),
         investigations: new Map(saved.investigations || []),
         privateNotices: new Map(saved.privateNotices || []),
       });

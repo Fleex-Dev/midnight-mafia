@@ -18,6 +18,7 @@ test("all application templates and role icons exist", async () => {
     "night",
     "day",
     "vote",
+    "vote-result",
     "ended",
     "header",
     "footer",
@@ -91,15 +92,17 @@ test("the application keeps localization and responsive styles wired", async () 
 });
 
 test("night UI includes localized Mafia coordination and vote results", async () => {
-  const [night, day, waiting, app, screens, i18n, styles] = await Promise.all([
-    read("public/templates/night.html"),
-    read("public/templates/day.html"),
-    read("public/templates/waiting.html"),
-    read("public/app.js"),
-    read("public/js/screens.js"),
-    read("public/i18n.js"),
-    read("public/style.css"),
-  ]);
+  const [night, day, voteResult, waiting, app, screens, i18n, styles] =
+    await Promise.all([
+      read("public/templates/night.html"),
+      read("public/templates/day.html"),
+      read("public/templates/vote-result.html"),
+      read("public/templates/waiting.html"),
+      read("public/app.js"),
+      read("public/js/screens.js"),
+      read("public/i18n.js"),
+      read("public/style.css"),
+    ]);
   assert.match(night, /data-if="mafiaSelections"/);
   assert.match(night, /data-text="announcement"/);
   assert.match(night, /data-if="notice"/);
@@ -108,8 +111,12 @@ test("night UI includes localized Mafia coordination and vote results", async ()
   assert.match(day, /지난밤 조사 결과/);
   assert.match(day, /data-if="investigation"/);
   assert.match(day, /data-text="announcement"/);
+  assert.match(voteResult, /id="confirm-vote-result"/);
+  assert.match(voteResult, /data-text="title"/);
   assert.match(waiting, /data-text="announcement"/);
   assert.match(app, /type: "night-confirm"/);
+  assert.match(app, /type: "confirm-vote-result"/);
+  assert.match(app, /"vote-result": screens\.renderVoteResult/);
   assert.match(screens, /mafiaSelectionRows/);
   assert.match(screens, /targets\("night-select"/);
   assert.match(i18n, /"마피아 선택 현황": "Mafia selections"/);

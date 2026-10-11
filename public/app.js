@@ -23,6 +23,7 @@ const phaseLabels = {
   night: "밤",
   day: "낮",
   vote: "투표",
+  "vote-result": "투표 결과",
   ended: "게임 종료",
 };
 
@@ -639,6 +640,7 @@ function renderGame() {
     night: screens.renderNight,
     day: screens.renderDay,
     vote: screens.renderVote,
+    "vote-result": screens.renderVoteResult,
     ended: screens.renderEnded,
   }[state.phase];
 
@@ -791,6 +793,12 @@ function bindGameEvents() {
   document.querySelector("#night-confirm")?.addEventListener("click", () => {
     sendAction({ type: "night-confirm" });
   });
+
+  document
+    .querySelector("#confirm-vote-result")
+    ?.addEventListener("click", () => {
+      sendAction({ type: "confirm-vote-result" });
+    });
 
   // 참가자 강퇴
   document.querySelectorAll(".kick").forEach((button) => {

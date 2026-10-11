@@ -14,6 +14,7 @@ const TEMPLATE_NAMES = [
   "night",
   "day",
   "vote",
+  "vote-result",
   "ended",
   "header",
   "footer",

@@ -6,6 +6,7 @@ const phaseLabels = {
   night: "밤",
   day: "낮",
   vote: "투표",
+  "vote-result": "투표 결과",
   ended: "게임 종료",
 };
 
@@ -21,6 +22,8 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
           status = player.dayReady ? "밤 준비" : "대화 중";
         else status = player.dayReady ? "투표 준비" : "토론 중";
       }
+      if (state().phase === "vote-result" && player.alive)
+        status = player.resultReady ? "결과 확인 완료" : "결과 확인 중";
       const el = view("player", {
         name: player.name,
         role: revealRoles && player.role ? roleName(player.role) : "",
@@ -314,6 +317,32 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     slot(el, "targets", targets("vote", "투표"));
     return el;
   }
+  function renderVoteResult() {
+    const s = state();
+    const result = s.voteResult;
+    const progress = `${s.resultReadyCount}/${s.resultReadyRequiredCount}명이 결과를 확인했습니다.`;
+    const el = view("vote-result", {
+      title: `${result.playerName} 님은 ${result.roleName}였습니다.`,
+      description: "모두 결과를 확인하면 다음 단계로 넘어갑니다.",
+      action: s.you.resultReady ? "결과 확인 완료" : "결과 확인",
+      progress,
+    });
+    el.classList.add(`role-${result.role}`);
+    const icon = document.createElement("span");
+    icon.className = "role-svg";
+    icon.style.setProperty(
+      "--icon-url",
+      `url('/icons/game/${ROLE_ICONS[result.role]}')`,
+    );
+    icon.setAttribute("aria-hidden", "true");
+    slot(el, "icon", icon);
+    visible(el, "alive", s.you.alive);
+    visible(el, "dead", !s.you.alive);
+    const button = el.querySelector("#confirm-vote-result");
+    if (button) button.disabled = s.you.resultReady;
+    slot(el, "players", players());
+    return el;
+  }
   function renderEnded() {
     const s = state(),
       mafia = s.winner === "mafia";
@@ -334,6 +363,7 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
     renderNight,
     renderDay,
     renderVote,
+    renderVoteResult,
     renderEnded,
   };
 }
