@@ -257,6 +257,17 @@ function connect() {
   });
 }
 
+function resumeConnection() {
+  if (!session || document.visibilityState === "hidden") return;
+  connect();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") resumeConnection();
+});
+window.addEventListener("pageshow", resumeConnection);
+window.addEventListener("online", resumeConnection);
+
 async function restoreSession() {
   try {
     const data = await api(`/api/rooms/${session.code}/state`);

@@ -46,6 +46,7 @@ test("Cloudflare Worker and Durable Object configuration is present", async () =
   ]);
   assert.match(worker, /class RoomDurableObject/);
   assert.match(worker, /acceptWebSocket/);
+  assert.match(worker, /DISCONNECT_GRACE_MS = 30 \* 60 \* 1000/);
   assert.match(config, /"new_sqlite_classes"/);
   assert.match(config, /"run_worker_first": true/);
   assert.match(packageFile, /wrangler deploy/);
@@ -88,6 +89,9 @@ test("the application keeps localization and responsive styles wired", async () 
   assert.match(index, /viewport-fit=cover/);
   assert.match(app, /setLocalePreference/);
   assert.match(app, /© 2026 FLEEX/);
+  assert.match(app, /visibilitychange/);
+  assert.match(app, /window\.addEventListener\("pageshow", resumeConnection\)/);
+  assert.match(app, /window\.addEventListener\("online", resumeConnection\)/);
   assert.match(styles, /@media \(max-width: 600px\)/);
 });
 

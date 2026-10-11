@@ -3,7 +3,7 @@ import { createGameService, GameError } from "../game.js";
 
 const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ROOM_IDLE_TTL_MS = 8 * 60 * 60 * 1000;
-const DISCONNECT_GRACE_MS = 2 * 60 * 1000;
+const DISCONNECT_GRACE_MS = 30 * 60 * 1000;
 const TEMPLATE_NAMES = [
   "player",
   "target",
