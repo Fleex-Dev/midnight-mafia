@@ -36,6 +36,7 @@ test("all application templates and role icons exist", async () => {
       (name) => access(join(root, "public", "icons", "game", name)),
     ),
   );
+  await access(join(root, "public", "images", "social-card-base.png"));
 });
 
 test("Cloudflare Worker and Durable Object configuration is present", async () => {
@@ -49,6 +50,7 @@ test("Cloudflare Worker and Durable Object configuration is present", async () =
   assert.match(worker, /DISCONNECT_GRACE_MS = 30 \* 60 \* 1000/);
   assert.match(config, /"new_sqlite_classes"/);
   assert.match(config, /"run_worker_first": true/);
+  assert.match(config, /"binding": "IMAGES"/);
   assert.match(packageFile, /wrangler deploy/);
 });
 
@@ -106,7 +108,10 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/"/);
   assert.match(index, /name="robots"[\s\S]*content="index, follow, max-image-preview:large, max-snippet:-1"/);
   assert.match(index, /property="og:locale" content="ko_KR"/);
-  assert.match(index, /name="twitter:card" content="summary"/);
+  assert.match(index, /property="og:image" content="https:\/\/midnight-mafia\.fleex\.app\/og\/default\.jpg"/);
+  assert.match(index, /property="og:image:width" content="1200"/);
+  assert.match(index, /property="og:image:height" content="630"/);
+  assert.match(index, /name="twitter:card" content="summary_large_image"/);
   assert.match(index, /rel="icon" type="image\/svg\+xml" href="\/icons\/site-icon\.svg"/);
   assert.doesNotMatch(index, /name="keywords"/i);
   const structuredData = JSON.parse(
@@ -133,6 +138,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     "google-site-verification: googlee55a4c2f1506c8a3.html",
   );
   assert.match(worker, /"x-robots-tag": "noindex"/);
+  assert.match(worker, /socialImageResponse/);
   assert.match(worker, /\["\/rules\.html", "\/pages\/ko\/rules\.html"\]/);
   assert.match(worker, /\["\/en\/rules\.html", "\/pages\/en\/rules\.html"\]/);
 
@@ -154,7 +160,8 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
       assert.match(document, /property="og:title" content="[^"]+"/);
       assert.match(document, /property="og:description" content="[^"]+"/);
       assert.match(document, /property="og:url" content="https:\/\//);
-      assert.match(document, /name="twitter:card" content="summary"/);
+      assert.match(document, /property="og:image" content="https:\/\//);
+      assert.match(document, /name="twitter:card" content="summary_large_image"/);
     }
   }
 });

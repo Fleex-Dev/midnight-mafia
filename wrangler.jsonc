@@ -10,6 +10,9 @@
     "run_worker_first": true,
     "html_handling": "none"
   },
+  "images": {
+    "binding": "IMAGES"
+  },
   "routes": [
     {
       "pattern": "midnight-mafia.fleex.app",

@@ -167,6 +167,47 @@ function errorResponse(error) {
   });
 }
 
+export function personalizeLandingHtml(html, origin, roomCode) {
+  const title = `심야 마피아 · 방 코드 ${roomCode}`;
+  const description = `심야 마피아 방 ${roomCode}에 참가해 역할을 확인하고 함께 게임을 시작하세요.`;
+  const roomUrl = `${origin}/?room=${roomCode}`;
+  const imageUrl = `${origin}/og/room/${roomCode}.jpg`;
+  return html
+    .replace("<title>심야 마피아</title>", `<title>${title}</title>`)
+    .replace(
+      '<meta name="description" content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임" />',
+      `<meta name="description" content="${description}" />`,
+    )
+    .replace(
+      '<meta property="og:title" content="심야 마피아" />',
+      `<meta property="og:title" content="${title}" />`,
+    )
+    .replace(
+      '<meta property="og:description" content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임" />',
+      `<meta property="og:description" content="${description}" />`,
+    )
+    .replace(
+      '<meta property="og:url" content="https://midnight-mafia.fleex.app/" />',
+      `<meta property="og:url" content="${roomUrl}" />`,
+    )
+    .replace(
+      '<meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />',
+      `<meta property="og:image" content="${imageUrl}" />`,
+    )
+    .replace(
+      '<meta name="twitter:title" content="심야 마피아" />',
+      `<meta name="twitter:title" content="${title}" />`,
+    )
+    .replace(
+      '<meta name="twitter:description" content="앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는 실시간 마피아 게임" />',
+      `<meta name="twitter:description" content="${description}" />`,
+    )
+    .replace(
+      '<meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />',
+      `<meta name="twitter:image" content="${imageUrl}" />`,
+    );
+}
+
 function sessionFor(room, player) {
   return { code: room.code, playerId: player.id, token: player.token };
 }
@@ -285,6 +326,12 @@ export class RoomDurableObject {
       }
 
       const room = this.room();
+      if (request.method === "GET" && url.pathname === "/exists") {
+        return new Response(null, {
+          status: room ? 204 : 404,
+          headers: SECURITY_HEADERS,
+        });
+      }
       if (!room) throw new GameError("방을 찾을 수 없습니다. 코드를 확인해 주세요.", 404);
 
       if (request.method === "GET" && url.pathname === "/qr") {
@@ -538,6 +585,69 @@ async function templatesResponse(request, env) {
   return json(200, Object.fromEntries(entries));
 }
 
+async function roomExists(env, code) {
+  const response = await routeRoom(
+    new Request("https://room.internal/exists"),
+    env,
+    code,
+    "exists",
+  );
+  return response.status === 204;
+}
+
+async function socialImageResponse(request, env, requestedCode = "") {
+  const code =
+    requestedCode && (await roomExists(env, requestedCode))
+      ? requestedCode
+      : "";
+  const baseUrl = new URL("/images/social-card-base.png", request.url);
+  const base = await env.ASSETS.fetch(new Request(baseUrl));
+  if (!base.ok) throw new Error("Missing social card background");
+  const fallback = base.clone();
+  try {
+    let image = env.IMAGES.input(base.body).transform({
+      width: 1200,
+      height: 630,
+      fit: "cover",
+    });
+    image = image.draw(
+      env.IMAGES.text("MIDNIGHT MAFIA", {
+        color: "#eee7dc",
+        size: 64,
+      }),
+      { left: 72, top: 54 },
+    );
+    if (code) {
+      image = image
+        .draw(
+          env.IMAGES.text("ROOM CODE", {
+            color: "#c69b78",
+            size: 26,
+          }),
+          { left: 76, bottom: 106 },
+        )
+        .draw(
+          env.IMAGES.text(code, {
+            color: "#ffffff",
+            size: 68,
+          }),
+          { left: 72, bottom: 30 },
+        );
+    }
+    const response = (
+      await image.output({ format: "image/jpeg", quality: 90 })
+    ).response();
+    return withSecurityHeaders(response, {
+      "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+    });
+  } catch (error) {
+    console.error("Social image transformation failed", error);
+    return withSecurityHeaders(fallback, {
+      "cache-control": "public, max-age=300",
+    });
+  }
+}
+
 function withSecurityHeaders(response, extraHeaders = {}) {
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
@@ -579,6 +689,18 @@ export default {
       }
       if (request.method === "GET" && url.pathname === "/templates.json") {
         return templatesResponse(request, env);
+      }
+      const socialImageMatch = url.pathname.match(
+        /^\/og\/(?:default|room\/([A-HJ-NP-Z2-9]{4}))\.jpg$/,
+      );
+      if (request.method === "GET" && socialImageMatch) {
+        enforceRateLimit(
+          publicRateWindows,
+          `og:${clientIp(request)}`,
+          60,
+          60 * 1000,
+        );
+        return socialImageResponse(request, env, socialImageMatch[1] || "");
       }
       if (request.method === "POST" && url.pathname === "/api/rooms") {
         enforceRateLimit(
@@ -626,10 +748,26 @@ export default {
         url.searchParams.has("room")
           ? { "x-robots-tag": "noindex" }
           : {};
-      return withSecurityHeaders(
-        await env.ASSETS.fetch(staticAssetRequest(request)),
-        crawlerHeaders,
-      );
+      let assetResponse = await env.ASSETS.fetch(staticAssetRequest(request));
+      const roomCode = url.searchParams.get("room")?.toUpperCase() || "";
+      if (
+        request.method === "GET" &&
+        url.pathname === "/" &&
+        /^[A-HJ-NP-Z2-9]{4}$/.test(roomCode) &&
+        assetResponse.ok
+      ) {
+        const headers = new Headers(assetResponse.headers);
+        headers.set("cache-control", "no-store");
+        assetResponse = new Response(
+          personalizeLandingHtml(
+            await assetResponse.text(),
+            url.origin,
+            roomCode,
+          ),
+          { status: 200, headers },
+        );
+      }
+      return withSecurityHeaders(assetResponse, crawlerHeaders);
     } catch (error) {
       return errorResponse(error);
     }

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import worker, {
   assertTrustedOrigin,
+  personalizeLandingHtml,
   readJsonBody,
 } from "../src/worker.js";
 import { GameError } from "../src/game.js";
@@ -124,4 +125,27 @@ test("Worker rejects cross-site and non-JSON room creation before storage access
     {},
   );
   assert.equal(wrongType.status, 415);
+});
+
+test("room invite metadata includes its code and dynamic social image", () => {
+  const source = `
+    <title>심야 마피아</title>
+    <meta name="description" content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임" />
+    <meta property="og:title" content="심야 마피아" />
+    <meta property="og:description" content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임" />
+    <meta property="og:url" content="https://midnight-mafia.fleex.app/" />
+    <meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />
+    <meta name="twitter:title" content="심야 마피아" />
+    <meta name="twitter:description" content="앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는 실시간 마피아 게임" />
+    <meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />
+  `;
+  const result = personalizeLandingHtml(
+    source,
+    "https://midnight-mafia.fleex.app",
+    "A9UL",
+  );
+  assert.match(result, /심야 마피아 · 방 코드 A9UL/);
+  assert.match(result, /\?room=A9UL/);
+  assert.match(result, /\/og\/room\/A9UL\.jpg/);
+  assert.doesNotMatch(result, /og\/default\.jpg/);
 });
