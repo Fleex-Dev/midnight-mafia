@@ -605,6 +605,9 @@ async function socialImageResponse(request, env, requestedCode = "") {
   if (!base.ok) throw new Error("Missing social card background");
   const fallback = base.clone();
   try {
+    const font = {
+      url: new URL("/fonts/inter-700.ttf", request.url).href,
+    };
     let image = env.IMAGES.input(base.body).transform({
       width: 1200,
       height: 630,
@@ -612,6 +615,7 @@ async function socialImageResponse(request, env, requestedCode = "") {
     });
     image = image.draw(
       env.IMAGES.text("MIDNIGHT MAFIA", {
+        font,
         color: "#eee7dc",
         size: 64,
       }),
@@ -621,6 +625,7 @@ async function socialImageResponse(request, env, requestedCode = "") {
       image = image
         .draw(
           env.IMAGES.text("ROOM CODE", {
+            font,
             color: "#c69b78",
             size: 26,
           }),
@@ -628,6 +633,7 @@ async function socialImageResponse(request, env, requestedCode = "") {
         )
         .draw(
           env.IMAGES.text(code, {
+            font,
             color: "#ffffff",
             size: 68,
           }),

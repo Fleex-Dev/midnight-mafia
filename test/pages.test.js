@@ -37,6 +37,10 @@ test("all application templates and role icons exist", async () => {
     ),
   );
   await access(join(root, "public", "images", "social-card-base.png"));
+  await Promise.all([
+    access(join(root, "public", "fonts", "inter-700.ttf")),
+    access(join(root, "public", "fonts", "OFL.txt")),
+  ]);
 });
 
 test("Cloudflare Worker and Durable Object configuration is present", async () => {
