@@ -104,6 +104,25 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     read("src/worker.js"),
   ]);
   assert.match(index, /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/"/);
+  assert.match(index, /name="robots"[\s\S]*content="index, follow, max-image-preview:large, max-snippet:-1"/);
+  assert.match(index, /property="og:locale" content="ko_KR"/);
+  assert.match(index, /name="twitter:card" content="summary"/);
+  assert.match(index, /rel="icon" type="image\/svg\+xml" href="\/icons\/site-icon\.svg"/);
+  assert.doesNotMatch(index, /name="keywords"/i);
+  const structuredData = JSON.parse(
+    index.match(
+      /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+    )[1],
+  );
+  assert.equal(structuredData["@context"], "https://schema.org");
+  assert.ok(
+    structuredData["@graph"].some(
+      (entry) => entry["@type"] === "WebApplication",
+    ),
+  );
+  assert.ok(
+    structuredData["@graph"].some((entry) => entry["@type"] === "WebSite"),
+  );
   assert.match(robots, /Sitemap: https:\/\/midnight-mafia\.fleex\.app\/sitemap\.xml/);
   assert.match(robots, /Disallow: \/api\//);
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
@@ -130,6 +149,13 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
       en,
       new RegExp(`rel="canonical" href="https://midnight-mafia\\.fleex\\.app/en/${page}\\.html"`),
     );
+    for (const document of [ko, en]) {
+      assert.match(document, /name="robots" content="index, follow, max-snippet:-1"/);
+      assert.match(document, /property="og:title" content="[^"]+"/);
+      assert.match(document, /property="og:description" content="[^"]+"/);
+      assert.match(document, /property="og:url" content="https:\/\//);
+      assert.match(document, /name="twitter:card" content="summary"/);
+    }
   }
 });
 
