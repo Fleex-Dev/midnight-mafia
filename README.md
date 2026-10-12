@@ -76,7 +76,9 @@ Durable Objects를 사용하는 프로젝트는 일반 Worker와 Preview 동작�
 - `public/app.js`: 브라우저 상태, 자동 재연결과 이벤트 처리
 - `public/js/screens.js`: 단계별 화면 렌더링
 - `public/templates/`: 화면별 HTML 템플릿
-- `public/i18n.js`: 한국어·영어 번역
+- `public/js/`: 화면 렌더링, 템플릿 처리와 한국어·영어 번역
+- `public/css/`: 게임 화면과 안내 페이지 스타일
+- `public/pages/`: 한국어·영어 안내 페이지 원본
 - `public/icons/game/`: 역할 SVG 아이콘
 - `test/`: 자동 테스트
 

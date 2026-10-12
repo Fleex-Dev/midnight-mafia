@@ -70,8 +70,8 @@ test("lobby includes QR, share icon, and host controls", async () => {
 test("information pages exist in Korean and English", async () => {
   for (const page of ["guide", "rules", "roles", "privacy"]) {
     const [ko, en] = await Promise.all([
-      read(`public/${page}.html`),
-      read(`public/en/${page}.html`),
+      read(`public/pages/ko/${page}.html`),
+      read(`public/pages/en/${page}.html`),
     ]);
     assert.match(ko, /<title>.+<\/title>/);
     assert.match(en, /<title>.+<\/title>/);
@@ -84,7 +84,7 @@ test("the application keeps localization and responsive styles wired", async () 
   const [index, app, styles] = await Promise.all([
     read("public/index.html"),
     read("public/app.js"),
-    read("public/style.css"),
+    read("public/css/style.css"),
   ]);
   assert.match(index, /viewport-fit=cover/);
   assert.match(app, /setLocalePreference/);
@@ -114,11 +114,13 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     "google-site-verification: googlee55a4c2f1506c8a3.html",
   );
   assert.match(worker, /"x-robots-tag": "noindex"/);
+  assert.match(worker, /\["\/rules\.html", "\/pages\/ko\/rules\.html"\]/);
+  assert.match(worker, /\["\/en\/rules\.html", "\/pages\/en\/rules\.html"\]/);
 
   for (const page of ["guide", "rules", "roles", "privacy"]) {
     const [ko, en] = await Promise.all([
-      read(`public/${page}.html`),
-      read(`public/en/${page}.html`),
+      read(`public/pages/ko/${page}.html`),
+      read(`public/pages/en/${page}.html`),
     ]);
     assert.match(
       ko,
@@ -141,8 +143,8 @@ test("phase UI includes confirmation flows, Mafia coordination, and vote results
       read("public/templates/waiting.html"),
       read("public/app.js"),
       read("public/js/screens.js"),
-      read("public/i18n.js"),
-      read("public/style.css"),
+      read("public/js/i18n.js"),
+      read("public/css/style.css"),
     ]);
   assert.match(night, /data-if="mafiaSelections"/);
   assert.match(night, /data-text="announcement"/);

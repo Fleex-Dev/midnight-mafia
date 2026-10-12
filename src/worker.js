@@ -27,6 +27,17 @@ const TEMPLATE_NAMES = [
   "landing-create",
   "landing-join",
 ];
+const STATIC_ASSET_PATHS = new Map([
+  ["/", "/index.html"],
+  ["/guide.html", "/pages/ko/guide.html"],
+  ["/privacy.html", "/pages/ko/privacy.html"],
+  ["/roles.html", "/pages/ko/roles.html"],
+  ["/rules.html", "/pages/ko/rules.html"],
+  ["/en/guide.html", "/pages/en/guide.html"],
+  ["/en/privacy.html", "/pages/en/privacy.html"],
+  ["/en/roles.html", "/pages/en/roles.html"],
+  ["/en/rules.html", "/pages/en/rules.html"],
+]);
 
 const SECURITY_HEADERS = {
   "content-security-policy":
@@ -542,6 +553,14 @@ function withSecurityHeaders(response, extraHeaders = {}) {
   });
 }
 
+function staticAssetRequest(request) {
+  const url = new URL(request.url);
+  const assetPath = STATIC_ASSET_PATHS.get(url.pathname);
+  if (!assetPath) return request;
+  url.pathname = assetPath;
+  return new Request(url, request);
+}
+
 async function routeRoom(request, env, code, operation) {
   const id = env.ROOMS.idFromName(code);
   const stub = env.ROOMS.get(id);
@@ -608,7 +627,7 @@ export default {
           ? { "x-robots-tag": "noindex" }
           : {};
       return withSecurityHeaders(
-        await env.ASSETS.fetch(request),
+        await env.ASSETS.fetch(staticAssetRequest(request)),
         crawlerHeaders,
       );
     } catch (error) {

@@ -6,7 +6,7 @@ import {
   localize,
   setLocalePreference,
   tr,
-} from "./i18n.js";
+} from "./js/i18n.js";
 
 // ============================================================
 // 1. 상수 및 상태
