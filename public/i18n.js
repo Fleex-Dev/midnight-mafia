@@ -230,12 +230,16 @@ const EN = {
   "선택할 수 없는 대상입니다.": "That player cannot be selected.",
   "알 수 없는 요청입니다.": "Unknown request.",
   "요청 형식이 올바르지 않습니다.": "Invalid request format.",
+  "JSON 요청만 허용됩니다.": "Only JSON requests are allowed.",
+  "허용되지 않은 요청 출처입니다.": "This request origin is not allowed.",
   "요청이 너무 큽니다.": "The request is too large.",
   "이 방은 최대 인원 12명이 모두 찼습니다.":
     "This room has reached its 12-player limit.",
   "이 역할은 밤 행동이 없습니다.": "This role has no night action.",
   "이름은 1~12자로 입력해 주세요.":
     "Enter a nickname between 1 and 12 characters.",
+  "이름에 사용할 수 없는 문자가 포함되어 있습니다.":
+    "The nickname contains unsupported characters.",
   "이미 게임이 시작되었습니다.": "The game has already started.",
   "이미 사용 중인 이름입니다.": "That nickname is already in use.",
   "이미 시작한 게임에는 참가할 수 없습니다.":
@@ -246,6 +250,7 @@ const EN = {
   "지금은 밤 행동을 할 수 없습니다.": "Night actions are not available now.",
   "먼저 대상을 선택해 주세요.": "Choose a target first.",
   "먼저 투표할 사람을 선택해 주세요.": "Choose a player before confirming your vote.",
+  "이미 선택을 확정했습니다.": "Your choice has already been confirmed.",
   "지금은 준비할 단계가 아닙니다.": "The game is not in the ready phase.",
   "지금은 투표를 준비할 수 없습니다.": "You cannot get ready to vote now.",
   "지금은 투표를 시작할 수 없습니다.": "Voting cannot start now.",

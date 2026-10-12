@@ -19,17 +19,23 @@ function startAtDay(service, room, players, host) {
   assert.equal(room.round, 1);
 }
 
+function castVote(service, room, player, target) {
+  service.applyAction(room, player, {
+    type: "vote-select",
+    targetId: target.id,
+  });
+  service.applyAction(room, player, { type: "vote-confirm" });
+}
+
 function voteFor(service, room, players, target) {
   for (const player of players.filter((current) => current.alive)) {
-    service.applyAction(room, player, {
-      type: "vote",
-      targetId:
-        player.id === target.id
-          ? players.find(
-              (current) => current.alive && current.id !== target.id,
-            ).id
-          : target.id,
-    });
+    const selected =
+      player.id === target.id
+        ? players.find(
+            (current) => current.alive && current.id !== target.id,
+          )
+        : target;
+    castVote(service, room, player, selected);
   }
 }
 
@@ -79,6 +85,10 @@ test("room creation, nickname validation, and role settings", () => {
   assert.throws(
     () => service.joinRoom(room.code, "참가자1"),
     (error) => error instanceof GameError && error.message === "이미 사용 중인 이름입니다.",
+  );
+  assert.throws(
+    () => service.joinRoom(room.code, "정상\u202E이름"),
+    /사용할 수 없는 문자/,
   );
   service.applyAction(room, host, {
     type: "update-settings",
@@ -166,6 +176,96 @@ test("day votes may change before confirmation and resolve only after confirmati
   }
   assert.equal(room.phase, "vote-result");
   assert.equal(room.voteResult.playerId, changedTarget.id);
+});
+
+test("confirmed actions cannot be rewritten through direct requests", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 6);
+  enterFirstNight(service, room, players, host);
+  const mafia = players.find((player) => player.role === "mafia");
+  const nightTargets = players.filter((player) => player.role !== "mafia");
+  service.applyAction(room, mafia, {
+    type: "night-select",
+    targetId: nightTargets[0].id,
+  });
+  service.applyAction(room, mafia, { type: "night-confirm" });
+  assert.throws(
+    () =>
+      service.applyAction(room, mafia, {
+        type: "night-select",
+        targetId: nightTargets[1].id,
+      }),
+    (error) => error instanceof GameError && error.status === 409,
+  );
+  assert.equal(room.actions.get(mafia.id).targetId, nightTargets[0].id);
+  assert.equal(room.actions.get(mafia.id).confirmed, true);
+
+  assert.throws(
+    () =>
+      service.applyAction(room, mafia, {
+        type: "night-action",
+        targetId: nightTargets[1].id,
+      }),
+    /알 수 없는 요청/,
+  );
+
+  const cop = players.find((player) => player.role === "cop");
+  const doctor = players.find((player) => player.role === "doctor");
+  service.applyAction(room, cop, {
+    type: "night-select",
+    targetId: mafia.id,
+  });
+  service.applyAction(room, cop, { type: "night-confirm" });
+  service.applyAction(room, doctor, {
+    type: "night-select",
+    targetId: doctor.id,
+  });
+  service.applyAction(room, doctor, { type: "night-confirm" });
+  assert.equal(room.phase, "day");
+
+  const alive = players.filter((player) => player.alive);
+  for (const player of alive)
+    service.applyAction(room, player, { type: "set-day-ready", ready: true });
+  const voter = alive[0];
+  const voteTargets = alive.filter((player) => player.id !== voter.id);
+  service.applyAction(room, voter, {
+    type: "vote-select",
+    targetId: voteTargets[0].id,
+  });
+  service.applyAction(room, voter, { type: "vote-confirm" });
+  assert.throws(
+    () =>
+      service.applyAction(room, voter, {
+        type: "vote-select",
+        targetId: voteTargets[1].id,
+      }),
+    (error) => error instanceof GameError && error.status === 409,
+  );
+  assert.equal(room.actions.get(voter.id).targetId, voteTargets[0].id);
+  assert.equal(room.actions.get(voter.id).confirmed, true);
+  assert.throws(
+    () =>
+      service.applyAction(room, voter, {
+        type: "vote",
+        targetId: voteTargets[1].id,
+      }),
+    /알 수 없는 요청/,
+  );
+});
+
+test("public state never includes session tokens or hidden roles", () => {
+  const service = createGameService();
+  const { room, players, host } = addPlayers(service, 6);
+  service.applyAction(room, host, { type: "start" });
+  const viewer = players.find((player) => player.role === "citizen");
+  const state = service.getState(room, viewer);
+  assert.equal(state.you.role, "citizen");
+  assert.equal(state.players.every((player) => player.role === undefined), true);
+  assert.equal(JSON.stringify(state).includes(viewer.token), false);
+  assert.equal(
+    players.some((player) => JSON.stringify(state).includes(player.token)),
+    false,
+  );
 });
 
 test("votes resolve and determine a winner", () => {
@@ -285,10 +385,7 @@ test("a tie or a top vote below the majority eliminates nobody", () => {
     [d, b],
     [e, c],
   ])
-    tied.service.applyAction(tied.room, player, {
-      type: "vote",
-      targetId: target.id,
-    });
+    castVote(tied.service, tied.room, player, target);
 
   assert.equal(tied.room.phase, "vote-result");
   assert.equal(tied.room.voteResult.eliminated, false);
@@ -308,10 +405,7 @@ test("a tie or a top vote below the majority eliminates nobody", () => {
     [i, h],
     [j, i],
   ])
-    belowMajority.service.applyAction(belowMajority.room, player, {
-      type: "vote",
-      targetId: target.id,
-    });
+    castVote(belowMajority.service, belowMajority.room, player, target);
 
   assert.equal(belowMajority.room.phase, "vote-result");
   assert.equal(belowMajority.room.voteResult.eliminated, false);
@@ -343,10 +437,7 @@ test("a night result remains visible when the final kill ends the game", () => {
   for (const player of alive)
     service.applyAction(room, player, { type: "set-day-ready", ready: true });
   for (let index = 0; index < alive.length; index += 1)
-    service.applyAction(room, alive[index], {
-      type: "vote",
-      targetId: alive[(index + 1) % alive.length].id,
-    });
+    castVote(service, room, alive[index], alive[(index + 1) % alive.length]);
   confirmVoteResult(service, room, players);
 
   const finalVictim = players.find(
@@ -467,8 +558,12 @@ test("leaving transfers the host and cannot block a phase", () => {
   const target = remaining.find(
     (player) => player.role === "citizen" && player.alive,
   );
-  service.applyAction(room, mafia, { type: "night-action", targetId: target.id });
-  if (cop) service.applyAction(room, cop, { type: "night-action", targetId: mafia.id });
+  service.applyAction(room, mafia, { type: "night-select", targetId: target.id });
+  service.applyAction(room, mafia, { type: "night-confirm" });
+  if (cop) {
+    service.applyAction(room, cop, { type: "night-select", targetId: mafia.id });
+    service.applyAction(room, cop, { type: "night-confirm" });
+  }
   if (doctor) service.removePlayer(room, doctor.id);
   assert.notEqual(room.phase, "night");
 });

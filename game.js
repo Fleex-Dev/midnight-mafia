@@ -43,11 +43,22 @@ function makeId(size = 12) {
   return value.slice(0, size * 2);
 }
 
+function randomInt(max) {
+  if (!Number.isSafeInteger(max) || max < 1)
+    throw new RangeError("max must be a positive integer");
+  const range = 0x1_0000_0000;
+  const limit = range - (range % max);
+  const values = new Uint32Array(1);
+  do globalThis.crypto.getRandomValues(values);
+  while (values[0] >= limit);
+  return values[0] % max;
+}
+
 function makeCode(existing) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     let code = "";
     for (let index = 0; index < 4; index += 1) {
-      code += ROOM_ALPHABET[Math.floor(Math.random() * ROOM_ALPHABET.length)];
+      code += ROOM_ALPHABET[randomInt(ROOM_ALPHABET.length)];
     }
     if (!existing.has(code)) return code;
   }
@@ -56,17 +67,20 @@ function makeCode(existing) {
 
 function cleanName(value) {
   const name = String(value || "")
+    .normalize("NFKC")
     .trim()
-    .replace(/\s+/g, " ");
-  if (name.length < 1 || name.length > 12)
+    .replace(/\s+/gu, " ");
+  if ([...name].length < 1 || [...name].length > 12)
     throw new GameError("이름은 1~12자로 입력해 주세요.");
+  if (/[\p{Cc}\p{Cf}\p{Cs}]/u.test(name))
+    throw new GameError("이름에 사용할 수 없는 문자가 포함되어 있습니다.");
   return name;
 }
 
 function shuffle(items) {
   const output = [...items];
   for (let index = output.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(Math.random() * (index + 1));
+    const swap = randomInt(index + 1);
     [output[index], output[swap]] = [output[swap], output[index]];
   }
   return output;
@@ -121,6 +135,12 @@ function alivePlayers(room) {
 
 function touchRoom(room) {
   room.lastActivityAt = Date.now();
+}
+
+function requireSelectionOpen(room, player) {
+  const current = room.actions.get(player.id);
+  if (current && current.confirmed !== false)
+    throw new GameError("이미 선택을 확정했습니다.", 409);
 }
 
 function mostSelected(entries) {
@@ -455,11 +475,12 @@ export function createGameService() {
         );
       return;
     }
-    if (type === "night-select" || type === "night-action") {
+    if (type === "night-select") {
       if (room.phase !== "night" || !player.alive)
         throw new GameError("지금은 밤 행동을 할 수 없습니다.");
       if (!["mafia", "cop", "doctor"].includes(player.role))
         throw new GameError("이 역할은 밤 행동이 없습니다.");
+      requireSelectionOpen(room, player);
       const target = room.players.get(String(action.targetId || ""));
       if (!target?.alive) throw new GameError("선택할 수 없는 대상입니다.");
       if (player.role === "mafia" && target.role === "mafia")
@@ -468,13 +489,8 @@ export function createGameService() {
         throw new GameError("자신은 조사할 수 없습니다.");
       room.actions.set(player.id, {
         targetId: target.id,
-        // night-action은 배포 전 화면과의 호환을 위한 즉시 확정 요청입니다.
-        confirmed: type === "night-action",
+        confirmed: false,
       });
-      if (type === "night-action") {
-        recordInvestigation(room, player, room.actions.get(player.id));
-        resolveNight(room);
-      }
       return;
     }
     if (type === "night-confirm") {
@@ -485,6 +501,8 @@ export function createGameService() {
       const selection = room.actions.get(player.id);
       if (!selection?.targetId)
         throw new GameError("먼저 대상을 선택해 주세요.");
+      if (selection.confirmed !== false)
+        throw new GameError("이미 선택을 확정했습니다.", 409);
       room.actions.set(player.id, { ...selection, confirmed: true });
       recordInvestigation(room, player, room.actions.get(player.id));
       resolveNight(room);
@@ -503,18 +521,17 @@ export function createGameService() {
       }
       return;
     }
-    if (type === "vote-select" || type === "vote") {
+    if (type === "vote-select") {
       if (room.phase !== "vote" || !player.alive)
         throw new GameError("지금은 투표할 수 없습니다.");
+      requireSelectionOpen(room, player);
       const target = room.players.get(String(action.targetId || ""));
       if (!target?.alive || target.id === player.id)
         throw new GameError("선택할 수 없는 대상입니다.");
       room.actions.set(player.id, {
         targetId: target.id,
-        // vote는 배포 전 화면과의 호환을 위한 즉시 확정 요청입니다.
-        confirmed: type === "vote",
+        confirmed: false,
       });
-      if (type === "vote") resolveVote(room);
       return;
     }
     if (type === "vote-confirm") {
@@ -523,6 +540,8 @@ export function createGameService() {
       const selection = room.actions.get(player.id);
       if (!selection?.targetId)
         throw new GameError("먼저 투표할 사람을 선택해 주세요.");
+      if (selection.confirmed !== false)
+        throw new GameError("이미 선택을 확정했습니다.", 409);
       room.actions.set(player.id, { ...selection, confirmed: true });
       resolveVote(room);
       return;

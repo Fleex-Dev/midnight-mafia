@@ -6,8 +6,12 @@ export const ROLE_ICONS = Object.freeze({
   citizen: "users-round.svg",
 });
 
-export function roleIconMarkup(role) {
+export function createRoleIcon(role) {
   const filename = ROLE_ICONS[role];
-  if (!filename) return "";
-  return `<span class="role-svg" style="--icon-url: url('/icons/game/${filename}')" aria-hidden="true"></span>`;
+  if (!filename) return null;
+  const icon = document.createElement("span");
+  icon.className = "role-svg";
+  icon.style.setProperty("--icon-url", `url('/icons/game/${filename}')`);
+  icon.setAttribute("aria-hidden", "true");
+  return icon;
 }

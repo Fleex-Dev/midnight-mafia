@@ -4,6 +4,11 @@ import { createGameService, GameError } from "../game.js";
 const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ROOM_IDLE_TTL_MS = 8 * 60 * 60 * 1000;
 const DISCONNECT_GRACE_MS = 30 * 60 * 1000;
+const WS_AUTH_TIMEOUT_MS = 10 * 1000;
+const MAX_JSON_BYTES = 4 * 1024;
+const MAX_WS_MESSAGE_BYTES = 2 * 1024;
+const MAX_ROOM_SOCKETS = 36;
+const publicRateWindows = new Map();
 const TEMPLATE_NAMES = [
   "player",
   "target",
@@ -28,16 +33,105 @@ const SECURITY_HEADERS = {
     "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
   "referrer-policy": "same-origin",
+  "strict-transport-security": "max-age=63072000; includeSubDomains",
+  "cross-origin-opener-policy": "same-origin",
+  "cross-origin-resource-policy": "same-origin",
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
 };
 
+function randomInt(max) {
+  const range = 0x1_0000_0000;
+  const limit = range - (range % max);
+  const values = new Uint32Array(1);
+  do globalThis.crypto.getRandomValues(values);
+  while (values[0] >= limit);
+  return values[0] % max;
+}
+
 function makeRoomCode() {
   let code = "";
   for (let index = 0; index < 4; index += 1) {
-    code += ROOM_ALPHABET[Math.floor(Math.random() * ROOM_ALPHABET.length)];
+    code += ROOM_ALPHABET[randomInt(ROOM_ALPHABET.length)];
   }
   return code;
+}
+
+function clientIp(request) {
+  return request.headers.get("cf-connecting-ip") || "unknown";
+}
+
+function pruneRateWindows(windows, now) {
+  if (windows.size < 256) return;
+  for (const [key, entry] of windows) {
+    if (entry.resetAt <= now) windows.delete(key);
+  }
+  while (windows.size >= 512) {
+    windows.delete(windows.keys().next().value);
+  }
+}
+
+function enforceRateLimit(windows, key, limit, windowMs) {
+  const now = Date.now();
+  pruneRateWindows(windows, now);
+  const current = windows.get(key);
+  if (!current || current.resetAt <= now) {
+    windows.set(key, { count: 1, resetAt: now + windowMs });
+    return;
+  }
+  if (current.count >= limit)
+    throw new GameError("요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", 429);
+  current.count += 1;
+}
+
+export function assertTrustedOrigin(request) {
+  const origin = request.headers.get("origin");
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite === "cross-site")
+    throw new GameError("허용되지 않은 요청 출처입니다.", 403);
+  if (!origin || origin !== new URL(request.url).origin)
+    throw new GameError("허용되지 않은 요청 출처입니다.", 403);
+}
+
+export async function readJsonBody(request, maxBytes = MAX_JSON_BYTES) {
+  const contentType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    .trim()
+    .toLowerCase();
+  if (contentType !== "application/json")
+    throw new GameError("JSON 요청만 허용됩니다.", 415);
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes)
+    throw new GameError("요청이 너무 큽니다.", 413);
+  if (!request.body) throw new GameError("요청 형식이 올바르지 않습니다.");
+  const reader = request.body.getReader();
+  const chunks = [];
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+    if (receivedBytes > maxBytes) {
+      await reader.cancel();
+      throw new GameError("요청이 너무 큽니다.", 413);
+    }
+    chunks.push(value);
+  }
+  const buffer = new Uint8Array(receivedBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    buffer.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    const value = JSON.parse(new TextDecoder().decode(buffer));
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      throw new Error("Body must be an object");
+    return value;
+  } catch {
+    throw new GameError("요청 형식이 올바르지 않습니다.");
+  }
 }
 
 function json(status, value) {
@@ -79,6 +173,7 @@ export class RoomDurableObject {
     this.env = env;
     this.service = createGameService();
     this.disconnectDeadlines = {};
+    this.rateWindows = new Map();
     this.ready = this.ctx.blockConcurrencyWhile(async () => {
       const [snapshot, deadlines] = await Promise.all([
         this.ctx.storage.get("snapshot"),
@@ -106,6 +201,11 @@ export class RoomDurableObject {
     const room = this.room();
     const deadlines = Object.values(this.disconnectDeadlines).filter(Number.isFinite);
     const candidates = [...deadlines];
+    for (const socket of this.ctx.getWebSockets()) {
+      const attachment = socket.deserializeAttachment();
+      if (!attachment?.authenticated && Number.isFinite(attachment?.authDeadline))
+        candidates.push(attachment.authDeadline);
+    }
     if (room && this.connectedIds().size === 0) {
       candidates.push((room.lastActivityAt || room.createdAt) + ROOM_IDLE_TTL_MS);
     }
@@ -163,7 +263,7 @@ export class RoomDurableObject {
       const url = new URL(request.url);
       if (request.method === "POST" && url.pathname === "/create") {
         if (this.room()) throw new GameError("이미 사용 중인 방 코드입니다.", 409);
-        const body = await request.json();
+        const body = await readJsonBody(request);
         const { room, player } = this.service.createRoom(body.name, body.code);
         room.joinUrl = body.joinUrl;
         await this.persist();
@@ -177,6 +277,12 @@ export class RoomDurableObject {
       if (!room) throw new GameError("방을 찾을 수 없습니다. 코드를 확인해 주세요.", 404);
 
       if (request.method === "GET" && url.pathname === "/qr") {
+        enforceRateLimit(
+          this.rateWindows,
+          `qr:${clientIp(request)}`,
+          60,
+          60 * 1000,
+        );
         const image = await QRCode.toString(room.joinUrl, {
           type: "svg",
           width: 360,
@@ -196,15 +302,37 @@ export class RoomDurableObject {
         if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
           throw new GameError("WebSocket 연결이 필요합니다.", 426);
         }
+        enforceRateLimit(
+          this.rateWindows,
+          `ws:${clientIp(request)}`,
+          48,
+          60 * 1000,
+        );
+        if (this.ctx.getWebSockets().length >= MAX_ROOM_SOCKETS) {
+          throw new GameError(
+            "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+            429,
+          );
+        }
         const pair = new WebSocketPair();
         const [client, server] = Object.values(pair);
-        server.serializeAttachment({ authenticated: false });
+        server.serializeAttachment({
+          authenticated: false,
+          authDeadline: Date.now() + WS_AUTH_TIMEOUT_MS,
+        });
         this.ctx.acceptWebSocket(server);
+        await this.scheduleAlarm();
         return new Response(null, { status: 101, webSocket: client });
       }
 
       if (request.method === "POST" && url.pathname === "/join") {
-        const body = await request.json();
+        enforceRateLimit(
+          this.rateWindows,
+          `join:${clientIp(request)}`,
+          24,
+          60 * 1000,
+        );
+        const body = await readJsonBody(request);
         const { player } = this.service.joinRoom(room.code, body.name);
         await this.persist();
         await this.broadcast();
@@ -215,6 +343,12 @@ export class RoomDurableObject {
       }
 
       const credentials = authentication(request);
+      enforceRateLimit(
+        this.rateWindows,
+        `api:${clientIp(request)}`,
+        120,
+        10 * 1000,
+      );
       const { player } = this.service.authenticate(
         room.code,
         credentials.playerId,
@@ -230,7 +364,13 @@ export class RoomDurableObject {
       }
 
       if (request.method === "POST" && url.pathname === "/action") {
-        this.service.applyAction(room, player, await request.json());
+        enforceRateLimit(
+          this.rateWindows,
+          `action:${player.id}`,
+          30,
+          10 * 1000,
+        );
+        this.service.applyAction(room, player, await readJsonBody(request));
         await this.persist();
         const state = this.service.getState(room, player, this.connectedIds());
         await this.broadcast();
@@ -260,13 +400,38 @@ export class RoomDurableObject {
         typeof rawMessage === "string"
           ? rawMessage
           : new TextDecoder().decode(rawMessage);
+      if (new TextEncoder().encode(text).byteLength > MAX_WS_MESSAGE_BYTES) {
+        socket.close(1009, "Message too large");
+        return;
+      }
       const message = JSON.parse(text);
-      if (message.type !== "authenticate") throw new Error("Invalid message");
+      if (
+        !message ||
+        typeof message !== "object" ||
+        Array.isArray(message) ||
+        message.type !== "authenticate" ||
+        typeof message.room !== "string" ||
+        typeof message.playerId !== "string" ||
+        typeof message.token !== "string" ||
+        message.room.length !== 4 ||
+        message.playerId.length > 64 ||
+        message.token.length > 128
+      )
+        throw new Error("Invalid message");
       const { room, player } = this.service.authenticate(
         message.room,
         message.playerId,
         message.token,
       );
+      for (const current of this.ctx.getWebSockets()) {
+        if (current === socket) continue;
+        const currentAttachment = current.deserializeAttachment();
+        if (
+          currentAttachment?.authenticated &&
+          currentAttachment.playerId === player.id
+        )
+          current.close(1000, "Replaced by a new connection");
+      }
       socket.serializeAttachment({
         authenticated: true,
         roomCode: room.code,
@@ -286,9 +451,26 @@ export class RoomDurableObject {
     await this.ready;
     const attachment = socket.deserializeAttachment();
     const room = this.room();
-    if (!attachment?.authenticated || !room?.players.has(attachment.playerId)) return;
-    this.disconnectDeadlines[attachment.playerId] =
-      Date.now() + DISCONNECT_GRACE_MS;
+    if (!attachment?.authenticated || !room?.players.has(attachment.playerId)) {
+      await this.scheduleAlarm();
+      return;
+    }
+    const hasOtherConnection = this.ctx
+      .getWebSockets()
+      .some((current) => {
+        if (current === socket) return false;
+        const currentAttachment = current.deserializeAttachment();
+        return (
+          currentAttachment?.authenticated &&
+          currentAttachment.playerId === attachment.playerId
+        );
+      });
+    if (hasOtherConnection) {
+      delete this.disconnectDeadlines[attachment.playerId];
+    } else {
+      this.disconnectDeadlines[attachment.playerId] =
+        Date.now() + DISCONNECT_GRACE_MS;
+    }
     await this.persist();
     await this.broadcast();
   }
@@ -302,6 +484,15 @@ export class RoomDurableObject {
     const room = this.room();
     if (!room) return;
     const now = Date.now();
+    for (const socket of this.ctx.getWebSockets()) {
+      const attachment = socket.deserializeAttachment();
+      if (
+        !attachment?.authenticated &&
+        Number.isFinite(attachment?.authDeadline) &&
+        attachment.authDeadline <= now
+      )
+        socket.close(1008, "Authentication timeout");
+    }
     const connected = this.connectedIds();
     for (const [playerId, deadline] of Object.entries(this.disconnectDeadlines)) {
       if (connected.has(playerId)) {
@@ -362,6 +553,8 @@ export default {
   async fetch(request, env) {
     try {
       const url = new URL(request.url);
+      if (url.pathname.startsWith("/api/") && request.method !== "GET")
+        assertTrustedOrigin(request);
       if (request.method === "GET" && url.pathname === "/healthz") {
         return json(200, { ok: true, platform: "cloudflare" });
       }
@@ -369,7 +562,13 @@ export default {
         return templatesResponse(request, env);
       }
       if (request.method === "POST" && url.pathname === "/api/rooms") {
-        const body = await request.json();
+        enforceRateLimit(
+          publicRateWindows,
+          `create:${clientIp(request)}`,
+          10,
+          60 * 1000,
+        );
+        const body = await readJsonBody(request);
         for (let attempt = 0; attempt < 100; attempt += 1) {
           const code = makeRoomCode();
           const response = await routeRoom(
@@ -396,6 +595,7 @@ export default {
       );
       if (match) {
         const code = match[1].toUpperCase();
+        if (match[2].toLowerCase() === "ws") assertTrustedOrigin(request);
         return routeRoom(request, env, code, match[2].toLowerCase());
       }
       if (url.pathname.startsWith("/api/")) {

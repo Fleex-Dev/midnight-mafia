@@ -76,20 +76,6 @@ function saveSession(next) {
   }
 }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(
-    /[&<>'"]/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "'": "&#39;",
-        '"': "&quot;",
-      })[character],
-  );
-}
-
 function roleName(role) {
   return roleLabels[role] || role;
 }
@@ -142,7 +128,6 @@ async function run(task) {
 const screens = createScreens({
   getState: () => state,
   getRoleRevealed: () => roleRevealed,
-  escapeHtml,
   roleName,
 });
 
