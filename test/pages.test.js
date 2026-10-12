@@ -36,7 +36,12 @@ test("all application templates and role icons exist", async () => {
       (name) => access(join(root, "public", "icons", "game", name)),
     ),
   );
-  await access(join(root, "public", "images", "social-card-base.png"));
+  await Promise.all([
+    access(join(root, "public", "images", "social-card-default.png")),
+    access(join(root, "public", "images", "social-card-default-en.png")),
+    access(join(root, "public", "images", "social-card-invite.png")),
+    access(join(root, "public", "images", "social-card-invite-en.png")),
+  ]);
   await Promise.all([
     access(join(root, "public", "fonts", "inter-700.ttf")),
     access(join(root, "public", "fonts", "pretendard-700.woff2")),
@@ -55,7 +60,6 @@ test("Cloudflare Worker and Durable Object configuration is present", async () =
   assert.match(worker, /DISCONNECT_GRACE_MS = 30 \* 60 \* 1000/);
   assert.match(config, /"new_sqlite_classes"/);
   assert.match(config, /"run_worker_first": true/);
-  assert.match(config, /"binding": "IMAGES"/);
   assert.match(packageFile, /wrangler deploy/);
 });
 
@@ -115,7 +119,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/"/);
   assert.match(index, /name="robots"[\s\S]*content="index, follow, max-image-preview:large, max-snippet:-1"/);
   assert.match(index, /property="og:locale" content="ko_KR"/);
-  assert.match(index, /property="og:image" content="https:\/\/midnight-mafia\.fleex\.app\/og\/default\.jpg\?lang=ko&amp;v=2"/);
+  assert.match(index, /property="og:image" content="https:\/\/midnight-mafia\.fleex\.app\/og\/default\.png\?lang=ko&amp;v=9"/);
   assert.match(index, /property="og:image:secure_url"/);
   assert.match(index, /property="og:image:width" content="1200"/);
   assert.match(index, /property="og:image:height" content="630"/);
@@ -147,7 +151,10 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   );
   assert.match(worker, /"x-robots-tag": "noindex"/);
   assert.match(worker, /socialImageResponse/);
-  assert.match(worker, /env\.IMAGES\.text\("CASE FILE"/);
+  assert.match(worker, /social-card-invite-en\.png/);
+  assert.match(worker, /social-card-default\.png/);
+  assert.doesNotMatch(worker, /env\.IMAGES/);
+  assert.doesNotMatch(worker, /ROOM CODE|초대 코드|CASE FILE/);
   assert.match(worker, /\["\/rules\.html", "\/pages\/ko\/rules\.html"\]/);
   assert.match(worker, /\["\/en\/rules\.html", "\/pages\/en\/rules\.html"\]/);
 

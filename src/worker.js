@@ -91,7 +91,10 @@ function enforceRateLimit(windows, key, limit, windowMs) {
     return;
   }
   if (current.count >= limit)
-    throw new GameError("요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", 429);
+    throw new GameError(
+      "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+      429,
+    );
   current.count += 1;
 }
 
@@ -167,18 +170,23 @@ function errorResponse(error) {
   });
 }
 
-export function personalizeLandingHtml(html, origin, roomCode, language = "ko") {
+export function personalizeLandingHtml(
+  html,
+  origin,
+  roomCode,
+  language = "ko",
+) {
   const locale = language === "en" ? "en" : "ko";
   const title =
     locale === "en"
-      ? `Midnight Mafia · Room code ${roomCode}`
-      : `심야 마피아 · 방 코드 ${roomCode}`;
+      ? `Midnight Mafia · You’re invited`
+      : `심야 마피아 · 게임에 초대됐어요`;
   const description =
     locale === "en"
-      ? `Join room ${roomCode}, reveal your role, and play Midnight Mafia together.`
-      : `심야 마피아 방 ${roomCode}에 참가해 역할을 확인하고 함께 게임을 시작하세요.`;
+      ? `You have been invited to Midnight Mafia. Tap to join the game.`
+      : `심야 마피아 게임에 초대받았어요. 링크를 눌러 참여하세요.`;
   const roomUrl = `${origin}/?room=${roomCode}&lang=${locale}`;
-  const imageUrl = `${origin}/og/room/${roomCode}.jpg?lang=${locale}&v=2`;
+  const imageUrl = `${origin}/og/room/${roomCode}.png?lang=${locale}&v=9`;
   return html
     .replace("<title>심야 마피아</title>", `<title>${title}</title>`)
     .replace(
@@ -198,11 +206,11 @@ export function personalizeLandingHtml(html, origin, roomCode, language = "ko") 
       `<meta property="og:url" content="${roomUrl}" />`,
     )
     .replace(
-      '<meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />',
+      '<meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9" />',
       `<meta property="og:image" content="${imageUrl}" />`,
     )
     .replace(
-      '<meta property="og:image:secure_url" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />',
+      '<meta property="og:image:secure_url" content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9" />',
       `<meta property="og:image:secure_url" content="${imageUrl}" />`,
     )
     .replace(
@@ -214,7 +222,7 @@ export function personalizeLandingHtml(html, origin, roomCode, language = "ko") 
       `<meta name="twitter:description" content="${description}" />`,
     )
     .replace(
-      '<meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />',
+      '<meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9" />',
       `<meta name="twitter:image" content="${imageUrl}" />`,
     );
 }
@@ -262,18 +270,27 @@ export class RoomDurableObject {
 
   async scheduleAlarm() {
     const room = this.room();
-    const deadlines = Object.values(this.disconnectDeadlines).filter(Number.isFinite);
+    const deadlines = Object.values(this.disconnectDeadlines).filter(
+      Number.isFinite,
+    );
     const candidates = [...deadlines];
     for (const socket of this.ctx.getWebSockets()) {
       const attachment = socket.deserializeAttachment();
-      if (!attachment?.authenticated && Number.isFinite(attachment?.authDeadline))
+      if (
+        !attachment?.authenticated &&
+        Number.isFinite(attachment?.authDeadline)
+      )
         candidates.push(attachment.authDeadline);
     }
     if (room && this.connectedIds().size === 0) {
-      candidates.push((room.lastActivityAt || room.createdAt) + ROOM_IDLE_TTL_MS);
+      candidates.push(
+        (room.lastActivityAt || room.createdAt) + ROOM_IDLE_TTL_MS,
+      );
     }
     if (candidates.length) {
-      await this.ctx.storage.setAlarm(Math.max(Date.now() + 1_000, Math.min(...candidates)));
+      await this.ctx.storage.setAlarm(
+        Math.max(Date.now() + 1_000, Math.min(...candidates)),
+      );
     } else {
       await this.ctx.storage.deleteAlarm();
     }
@@ -325,7 +342,8 @@ export class RoomDurableObject {
     try {
       const url = new URL(request.url);
       if (request.method === "POST" && url.pathname === "/create") {
-        if (this.room()) throw new GameError("이미 사용 중인 방 코드입니다.", 409);
+        if (this.room())
+          throw new GameError("이미 사용 중인 방 코드입니다.", 409);
         const body = await readJsonBody(request);
         const { room, player } = this.service.createRoom(body.name, body.code);
         room.joinUrl = body.joinUrl;
@@ -343,7 +361,11 @@ export class RoomDurableObject {
           headers: SECURITY_HEADERS,
         });
       }
-      if (!room) throw new GameError("방을 찾을 수 없습니다. 코드를 확인해 주세요.", 404);
+      if (!room)
+        throw new GameError(
+          "방을 찾을 수 없습니다. 코드를 확인해 주세요.",
+          404,
+        );
 
       if (request.method === "GET" && url.pathname === "/qr") {
         enforceRateLimit(
@@ -529,16 +551,14 @@ export class RoomDurableObject {
       await this.scheduleAlarm();
       return;
     }
-    const hasOtherConnection = this.ctx
-      .getWebSockets()
-      .some((current) => {
-        if (current === socket) return false;
-        const currentAttachment = current.deserializeAttachment();
-        return (
-          currentAttachment?.authenticated &&
-          currentAttachment.playerId === attachment.playerId
-        );
-      });
+    const hasOtherConnection = this.ctx.getWebSockets().some((current) => {
+      if (current === socket) return false;
+      const currentAttachment = current.deserializeAttachment();
+      return (
+        currentAttachment?.authenticated &&
+        currentAttachment.playerId === attachment.playerId
+      );
+    });
     if (hasOtherConnection) {
       delete this.disconnectDeadlines[attachment.playerId];
     } else {
@@ -568,7 +588,9 @@ export class RoomDurableObject {
         socket.close(1008, "Authentication timeout");
     }
     const connected = this.connectedIds();
-    for (const [playerId, deadline] of Object.entries(this.disconnectDeadlines)) {
+    for (const [playerId, deadline] of Object.entries(
+      this.disconnectDeadlines,
+    )) {
       if (connected.has(playerId)) {
         delete this.disconnectDeadlines[playerId];
       } else if (deadline <= now) {
@@ -580,7 +602,9 @@ export class RoomDurableObject {
     if (
       currentRoom &&
       connected.size === 0 &&
-      (currentRoom.lastActivityAt || currentRoom.createdAt) + ROOM_IDLE_TTL_MS <= now
+      (currentRoom.lastActivityAt || currentRoom.createdAt) +
+        ROOM_IDLE_TTL_MS <=
+        now
     ) {
       this.service.rooms.delete(currentRoom.code);
     }
@@ -614,64 +638,22 @@ async function roomExists(env, code) {
 async function socialImageResponse(request, env, requestedCode = "") {
   const language =
     new URL(request.url).searchParams.get("lang") === "en" ? "en" : "ko";
-  const code =
-    requestedCode && (await roomExists(env, requestedCode))
-      ? requestedCode
-      : "";
-  const baseUrl = new URL("/images/social-card-base.png", request.url);
-  const base = await env.ASSETS.fetch(new Request(baseUrl));
-  if (!base.ok) throw new Error("Missing social card background");
-  const fallback = base.clone();
-  try {
-    const englishFont = {
-      url: new URL("/fonts/inter-700.ttf", request.url).href,
-    };
-    const koreanFont = {
-      url: new URL("/fonts/pretendard-700.woff2", request.url).href,
-    };
-    const font = language === "en" ? englishFont : koreanFont;
-    let image = env.IMAGES.input(base.body).transform({
-      width: 1200,
-      height: 630,
-      fit: "cover",
-    });
-    image = image.draw(
-      env.IMAGES.text(language === "en" ? "MIDNIGHT MAFIA" : "심야 마피아", {
-        font,
-        color: "#eee7dc",
-        size: language === "en" ? 62 : 68,
-      }),
-      { left: 72, top: 48 },
-    );
-    image = image
-      .draw(
-        env.IMAGES.text("CASE FILE", {
-          font: englishFont,
-          color: "#c93442",
-          size: 24,
-        }),
-        { left: 76, top: 365 },
-      )
-      .draw(
-        env.IMAGES.text(code || "00:00", {
-          font: englishFont,
-          color: "#e25b67",
-          size: code ? 62 : 56,
-        }),
-        { left: 72, top: 402 },
-      );
-    const response = (
-      await image.output({ format: "image/jpeg", quality: 90 })
-    ).response();
-    return withSecurityHeaders(response, {
-      "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
-    });
-  } catch (error) {
-    console.error("Social image transformation failed", error);
-    return withSecurityHeaders(fallback, {
-      "cache-control": "public, max-age=300",
-    });
-  }
+  const isInvite = Boolean(
+    requestedCode && (await roomExists(env, requestedCode)),
+  );
+  const name = isInvite
+    ? language === "en"
+      ? "social-card-invite-en.png"
+      : "social-card-invite.png"
+    : language === "en"
+      ? "social-card-default-en.png"
+      : "social-card-default.png";
+  const assetUrl = new URL(`/images/${name}`, request.url);
+  const response = await env.ASSETS.fetch(new Request(assetUrl));
+  if (!response.ok) throw new Error(`Missing social card: ${name}`);
+  return withSecurityHeaders(response, {
+    "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+  });
 }
 
 function withSecurityHeaders(response, extraHeaders = {}) {
@@ -718,7 +700,7 @@ export default {
         return templatesResponse(request, env);
       }
       const socialImageMatch = url.pathname.match(
-        /^\/og\/(?:default|room\/([A-HJ-NP-Z2-9]{4}))\.jpg$/,
+        /^\/og\/(?:default|room\/([A-HJ-NP-Z2-9]{4}))\.png$/,
       );
       if (request.method === "GET" && socialImageMatch) {
         enforceRateLimit(
@@ -755,7 +737,10 @@ export default {
           );
           if (response.status !== 409) return response;
         }
-        throw new GameError("방 코드를 만들지 못했습니다. 다시 시도해 주세요.", 500);
+        throw new GameError(
+          "방 코드를 만들지 못했습니다. 다시 시도해 주세요.",
+          500,
+        );
       }
 
       const match = url.pathname.match(

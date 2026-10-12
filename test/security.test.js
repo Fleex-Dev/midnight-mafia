@@ -127,28 +127,28 @@ test("Worker rejects cross-site and non-JSON room creation before storage access
   assert.equal(wrongType.status, 415);
 });
 
-test("room invite metadata includes its code and dynamic social image", () => {
+test("room invite metadata links to its dynamic localized social image", () => {
   const source = `
     <title>심야 마피아</title>
     <meta name="description" content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임" />
     <meta property="og:title" content="심야 마피아" />
     <meta property="og:description" content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임" />
     <meta property="og:url" content="https://midnight-mafia.fleex.app/" />
-    <meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />
-    <meta property="og:image:secure_url" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />
+    <meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9" />
+    <meta property="og:image:secure_url" content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9" />
     <meta name="twitter:title" content="심야 마피아" />
     <meta name="twitter:description" content="앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는 실시간 마피아 게임" />
-    <meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />
+    <meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9" />
   `;
   const result = personalizeLandingHtml(
     source,
     "https://midnight-mafia.fleex.app",
     "A9UL",
   );
-  assert.match(result, /심야 마피아 · 방 코드 A9UL/);
+  assert.match(result, /심야 마피아 · 게임에 초대됐어요/);
   assert.match(result, /\?room=A9UL&lang=ko/);
-  assert.match(result, /\/og\/room\/A9UL\.jpg\?lang=ko&v=2/);
-  assert.doesNotMatch(result, /og\/default\.jpg/);
+  assert.match(result, /\/og\/room\/A9UL\.png\?lang=ko&v=9/);
+  assert.doesNotMatch(result, /og\/default\.png/);
 
   const english = personalizeLandingHtml(
     source,
@@ -156,7 +156,7 @@ test("room invite metadata includes its code and dynamic social image", () => {
     "A9UL",
     "en",
   );
-  assert.match(english, /Midnight Mafia · Room code A9UL/);
+  assert.match(english, /Midnight Mafia · You’re invited/);
   assert.match(english, /\?room=A9UL&lang=en/);
-  assert.match(english, /\/og\/room\/A9UL\.jpg\?lang=en&v=2/);
+  assert.match(english, /\/og\/room\/A9UL\.png\?lang=en&v=9/);
 });
