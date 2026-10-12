@@ -178,7 +178,7 @@ export function personalizeLandingHtml(html, origin, roomCode, language = "ko") 
       ? `Join room ${roomCode}, reveal your role, and play Midnight Mafia together.`
       : `심야 마피아 방 ${roomCode}에 참가해 역할을 확인하고 함께 게임을 시작하세요.`;
   const roomUrl = `${origin}/?room=${roomCode}&lang=${locale}`;
-  const imageUrl = `${origin}/og/room/${roomCode}.jpg?lang=${locale}`;
+  const imageUrl = `${origin}/og/room/${roomCode}.jpg?lang=${locale}&v=2`;
   return html
     .replace("<title>심야 마피아</title>", `<title>${title}</title>`)
     .replace(
@@ -198,8 +198,12 @@ export function personalizeLandingHtml(html, origin, roomCode, language = "ko") 
       `<meta property="og:url" content="${roomUrl}" />`,
     )
     .replace(
-      '<meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />',
+      '<meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />',
       `<meta property="og:image" content="${imageUrl}" />`,
+    )
+    .replace(
+      '<meta property="og:image:secure_url" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />',
+      `<meta property="og:image:secure_url" content="${imageUrl}" />`,
     )
     .replace(
       '<meta name="twitter:title" content="심야 마피아" />',
@@ -210,7 +214,7 @@ export function personalizeLandingHtml(html, origin, roomCode, language = "ko") 
       `<meta name="twitter:description" content="${description}" />`,
     )
     .replace(
-      '<meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />',
+      '<meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />',
       `<meta name="twitter:image" content="${imageUrl}" />`,
     );
 }

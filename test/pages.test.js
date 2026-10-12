@@ -115,7 +115,8 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/"/);
   assert.match(index, /name="robots"[\s\S]*content="index, follow, max-image-preview:large, max-snippet:-1"/);
   assert.match(index, /property="og:locale" content="ko_KR"/);
-  assert.match(index, /property="og:image" content="https:\/\/midnight-mafia\.fleex\.app\/og\/default\.jpg"/);
+  assert.match(index, /property="og:image" content="https:\/\/midnight-mafia\.fleex\.app\/og\/default\.jpg\?lang=ko&amp;v=2"/);
+  assert.match(index, /property="og:image:secure_url"/);
   assert.match(index, /property="og:image:width" content="1200"/);
   assert.match(index, /property="og:image:height" content="630"/);
   assert.match(index, /name="twitter:card" content="summary_large_image"/);

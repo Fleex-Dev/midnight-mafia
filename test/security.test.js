@@ -134,10 +134,11 @@ test("room invite metadata includes its code and dynamic social image", () => {
     <meta property="og:title" content="심야 마피아" />
     <meta property="og:description" content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임" />
     <meta property="og:url" content="https://midnight-mafia.fleex.app/" />
-    <meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />
+    <meta property="og:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />
+    <meta property="og:image:secure_url" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />
     <meta name="twitter:title" content="심야 마피아" />
     <meta name="twitter:description" content="앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는 실시간 마피아 게임" />
-    <meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg" />
+    <meta name="twitter:image" content="https://midnight-mafia.fleex.app/og/default.jpg?lang=ko&amp;v=2" />
   `;
   const result = personalizeLandingHtml(
     source,
@@ -146,7 +147,7 @@ test("room invite metadata includes its code and dynamic social image", () => {
   );
   assert.match(result, /심야 마피아 · 방 코드 A9UL/);
   assert.match(result, /\?room=A9UL&lang=ko/);
-  assert.match(result, /\/og\/room\/A9UL\.jpg\?lang=ko/);
+  assert.match(result, /\/og\/room\/A9UL\.jpg\?lang=ko&v=2/);
   assert.doesNotMatch(result, /og\/default\.jpg/);
 
   const english = personalizeLandingHtml(
@@ -157,5 +158,5 @@ test("room invite metadata includes its code and dynamic social image", () => {
   );
   assert.match(english, /Midnight Mafia · Room code A9UL/);
   assert.match(english, /\?room=A9UL&lang=en/);
-  assert.match(english, /\/og\/room\/A9UL\.jpg\?lang=en/);
+  assert.match(english, /\/og\/room\/A9UL\.jpg\?lang=en&v=2/);
 });
