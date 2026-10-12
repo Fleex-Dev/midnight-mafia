@@ -1,5 +1,5 @@
 import QRCode from "qrcode";
-import { createGameService, GameError } from "../game.js";
+import { createGameService, GameError } from "./game.js";
 
 const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const ROOM_IDLE_TTL_MS = 8 * 60 * 60 * 1000;

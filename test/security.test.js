@@ -4,7 +4,7 @@ import worker, {
   assertTrustedOrigin,
   readJsonBody,
 } from "../src/worker.js";
-import { GameError } from "../game.js";
+import { GameError } from "../src/game.js";
 
 test("cross-site API and WebSocket origins are rejected", () => {
   assert.doesNotThrow(() =>

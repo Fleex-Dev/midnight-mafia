@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGameService, GameError } from "../game.js";
+import { createGameService, GameError } from "../src/game.js";
 
 function addPlayers(service, count = 5) {
   const { room, player: host } = service.createRoom("방장");

@@ -71,7 +71,7 @@ Durable Objects를 사용하는 프로젝트는 일반 Worker와 Preview 동작�
 ## 주요 파일
 
 - `src/worker.js`: Worker 라우터, Durable Object, WebSocket과 영구 상태
-- `game.js`: 방, 역할, 행동, 투표와 승리 판정
+- `src/game.js`: 방, 역할, 행동, 투표와 승리 판정
 - `wrangler.jsonc`: 정적 자산과 Durable Objects 배포 설정
 - `public/app.js`: 브라우저 상태, 자동 재연결과 이벤트 처리
 - `public/js/screens.js`: 단계별 화면 렌더링
