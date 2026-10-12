@@ -637,27 +637,25 @@ async function socialImageResponse(request, env, requestedCode = "") {
         color: "#eee7dc",
         size: language === "en" ? 62 : 68,
       }),
-      { left: 72, top: 62 },
+      { left: 72, top: 48 },
     );
-    if (code) {
-      image = image
-        .draw(
-          env.IMAGES.text(language === "en" ? "ROOM CODE" : "초대 코드", {
-            font,
-            color: "#b89a66",
-            size: language === "en" ? 25 : 27,
-          }),
-          { left: 74, bottom: 110 },
-        )
-        .draw(
-          env.IMAGES.text(code, {
-            font,
-            color: "#eee7dc",
-            size: 68,
-          }),
-          { left: 72, bottom: 30 },
-        );
-    }
+    image = image
+      .draw(
+        env.IMAGES.text("CASE FILE", {
+          font: englishFont,
+          color: "#c93442",
+          size: 24,
+        }),
+        { left: 76, top: 365 },
+      )
+      .draw(
+        env.IMAGES.text(code || "00:00", {
+          font: englishFont,
+          color: "#e25b67",
+          size: code ? 62 : 56,
+        }),
+        { left: 72, top: 402 },
+      );
     const response = (
       await image.output({ format: "image/jpeg", quality: 90 })
     ).response();

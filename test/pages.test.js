@@ -146,6 +146,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   );
   assert.match(worker, /"x-robots-tag": "noindex"/);
   assert.match(worker, /socialImageResponse/);
+  assert.match(worker, /env\.IMAGES\.text\("CASE FILE"/);
   assert.match(worker, /\["\/rules\.html", "\/pages\/ko\/rules\.html"\]/);
   assert.match(worker, /\["\/en\/rules\.html", "\/pages\/en\/rules\.html"\]/);
 
