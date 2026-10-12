@@ -95,11 +95,12 @@ test("the application keeps localization and responsive styles wired", async () 
   assert.match(styles, /@media \(max-width: 600px\)/);
 });
 
-test("search metadata, sitemap, and private room indexing rules are present", async () => {
-  const [index, robots, sitemap, worker] = await Promise.all([
+test("search metadata, sitemap, verification, and private room indexing rules are present", async () => {
+  const [index, robots, sitemap, verification, worker] = await Promise.all([
     read("public/index.html"),
     read("public/robots.txt"),
     read("public/sitemap.xml"),
+    read("public/googlee55a4c2f1506c8a3.html"),
     read("src/worker.js"),
   ]);
   assert.match(index, /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/"/);
@@ -108,6 +109,10 @@ test("search metadata, sitemap, and private room indexing rules are present", as
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/en\/rules\.html<\/loc>/);
   assert.doesNotMatch(sitemap, /\?room=/);
+  assert.equal(
+    verification.trim(),
+    "google-site-verification: googlee55a4c2f1506c8a3.html",
+  );
   assert.match(worker, /"x-robots-tag": "noindex"/);
 
   for (const page of ["guide", "rules", "roles", "privacy"]) {
