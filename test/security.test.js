@@ -145,7 +145,17 @@ test("room invite metadata includes its code and dynamic social image", () => {
     "A9UL",
   );
   assert.match(result, /심야 마피아 · 방 코드 A9UL/);
-  assert.match(result, /\?room=A9UL/);
-  assert.match(result, /\/og\/room\/A9UL\.jpg/);
+  assert.match(result, /\?room=A9UL&lang=ko/);
+  assert.match(result, /\/og\/room\/A9UL\.jpg\?lang=ko/);
   assert.doesNotMatch(result, /og\/default\.jpg/);
+
+  const english = personalizeLandingHtml(
+    source,
+    "https://midnight-mafia.fleex.app",
+    "A9UL",
+    "en",
+  );
+  assert.match(english, /Midnight Mafia · Room code A9UL/);
+  assert.match(english, /\?room=A9UL&lang=en/);
+  assert.match(english, /\/og\/room\/A9UL\.jpg\?lang=en/);
 });

@@ -129,6 +129,7 @@ const screens = createScreens({
   getState: () => state,
   getRoleRevealed: () => roleRevealed,
   roleName,
+  locale,
 });
 
 // ============================================================
@@ -278,9 +279,12 @@ async function restoreSession() {
 // ============================================================
 
 async function copyInviteLink() {
+  const inviteUrl = new URL(state.joinUrl, location.origin);
+  inviteUrl.searchParams.set("lang", locale);
+
   if (navigator.clipboard?.writeText) {
     try {
-      await navigator.clipboard.writeText(state.joinUrl);
+      await navigator.clipboard.writeText(inviteUrl.href);
       return true;
     } catch {
       // 로컬 HTTP 환경에서는 Clipboard API가 제한될 수 있음
@@ -290,6 +294,8 @@ async function copyInviteLink() {
   const input = document.querySelector("#invite-link");
 
   if (!input) return false;
+
+  input.value = inviteUrl.href;
 
   input.focus();
   input.select();

@@ -17,7 +17,12 @@ function roleWas(name) {
   return `${name}${hasFinalConsonant ? "이었습니다" : "였습니다"}`;
 }
 
-export function createScreens({ getState, getRoleRevealed, roleName }) {
+export function createScreens({
+  getState,
+  getRoleRevealed,
+  roleName,
+  locale = "ko",
+}) {
   const state = () => getState();
   function players(revealRoles = false) {
     return state().players.map((player) => {
@@ -148,9 +153,14 @@ export function createScreens({ getState, getRoleRevealed, roleName }) {
 
     el.classList.add(s.you.isHost ? "lobby-host" : "lobby-guest");
 
-    el.querySelector('[data-attr-src="qrDataUrl"]').src = s.qrDataUrl;
+    const inviteUrl = new URL(s.joinUrl, location.origin);
+    inviteUrl.searchParams.set("lang", locale);
+    const qrUrl = new URL(s.qrDataUrl, location.origin);
+    qrUrl.searchParams.set("lang", locale);
 
-    el.querySelector("#invite-link").value = s.joinUrl;
+    el.querySelector('[data-attr-src="qrDataUrl"]').src = `${qrUrl.pathname}${qrUrl.search}`;
+
+    el.querySelector("#invite-link").value = inviteUrl.href;
 
     el.querySelector('[data-text="cop"]').classList.toggle("off", !summary.cop);
 

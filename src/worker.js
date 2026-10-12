@@ -167,11 +167,18 @@ function errorResponse(error) {
   });
 }
 
-export function personalizeLandingHtml(html, origin, roomCode) {
-  const title = `심야 마피아 · 방 코드 ${roomCode}`;
-  const description = `심야 마피아 방 ${roomCode}에 참가해 역할을 확인하고 함께 게임을 시작하세요.`;
-  const roomUrl = `${origin}/?room=${roomCode}`;
-  const imageUrl = `${origin}/og/room/${roomCode}.jpg`;
+export function personalizeLandingHtml(html, origin, roomCode, language = "ko") {
+  const locale = language === "en" ? "en" : "ko";
+  const title =
+    locale === "en"
+      ? `Midnight Mafia · Room code ${roomCode}`
+      : `심야 마피아 · 방 코드 ${roomCode}`;
+  const description =
+    locale === "en"
+      ? `Join room ${roomCode}, reveal your role, and play Midnight Mafia together.`
+      : `심야 마피아 방 ${roomCode}에 참가해 역할을 확인하고 함께 게임을 시작하세요.`;
+  const roomUrl = `${origin}/?room=${roomCode}&lang=${locale}`;
+  const imageUrl = `${origin}/og/room/${roomCode}.jpg?lang=${locale}`;
   return html
     .replace("<title>심야 마피아</title>", `<title>${title}</title>`)
     .replace(
@@ -341,7 +348,12 @@ export class RoomDurableObject {
           60,
           60 * 1000,
         );
-        const image = await QRCode.toString(room.joinUrl, {
+        const joinUrl = new URL(room.joinUrl);
+        const language = url.searchParams.get("lang");
+        if (language === "ko" || language === "en") {
+          joinUrl.searchParams.set("lang", language);
+        }
+        const image = await QRCode.toString(joinUrl.href, {
           type: "svg",
           width: 360,
           margin: 1,
@@ -596,6 +608,8 @@ async function roomExists(env, code) {
 }
 
 async function socialImageResponse(request, env, requestedCode = "") {
+  const language =
+    new URL(request.url).searchParams.get("lang") === "en" ? "en" : "ko";
   const code =
     requestedCode && (await roomExists(env, requestedCode))
       ? requestedCode
@@ -605,36 +619,40 @@ async function socialImageResponse(request, env, requestedCode = "") {
   if (!base.ok) throw new Error("Missing social card background");
   const fallback = base.clone();
   try {
-    const font = {
+    const englishFont = {
       url: new URL("/fonts/inter-700.ttf", request.url).href,
     };
+    const koreanFont = {
+      url: new URL("/fonts/pretendard-700.woff2", request.url).href,
+    };
+    const font = language === "en" ? englishFont : koreanFont;
     let image = env.IMAGES.input(base.body).transform({
       width: 1200,
       height: 630,
       fit: "cover",
     });
     image = image.draw(
-      env.IMAGES.text("MIDNIGHT MAFIA", {
+      env.IMAGES.text(language === "en" ? "MIDNIGHT MAFIA" : "심야 마피아", {
         font,
         color: "#eee7dc",
-        size: 64,
+        size: language === "en" ? 62 : 68,
       }),
-      { left: 72, top: 54 },
+      { left: 72, top: 62 },
     );
     if (code) {
       image = image
         .draw(
-          env.IMAGES.text("ROOM CODE", {
+          env.IMAGES.text(language === "en" ? "ROOM CODE" : "초대 코드", {
             font,
-            color: "#c69b78",
-            size: 26,
+            color: "#b89a66",
+            size: language === "en" ? 25 : 27,
           }),
-          { left: 76, bottom: 106 },
+          { left: 74, bottom: 110 },
         )
         .draw(
           env.IMAGES.text(code, {
             font,
-            color: "#ffffff",
+            color: "#eee7dc",
             size: 68,
           }),
           { left: 72, bottom: 30 },
@@ -681,6 +699,7 @@ async function routeRoom(request, env, code, operation) {
   const id = env.ROOMS.idFromName(code);
   const stub = env.ROOMS.get(id);
   const internalUrl = new URL(`https://room.internal/${operation}`);
+  internalUrl.search = new URL(request.url).search;
   return stub.fetch(new Request(internalUrl, request));
 }
 
@@ -769,6 +788,7 @@ export default {
             await assetResponse.text(),
             url.origin,
             roomCode,
+            url.searchParams.get("lang"),
           ),
           { status: 200, headers },
         );

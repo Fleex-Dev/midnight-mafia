@@ -39,6 +39,7 @@ test("all application templates and role icons exist", async () => {
   await access(join(root, "public", "images", "social-card-base.png"));
   await Promise.all([
     access(join(root, "public", "fonts", "inter-700.ttf")),
+    access(join(root, "public", "fonts", "pretendard-700.woff2")),
     access(join(root, "public", "fonts", "OFL.txt")),
   ]);
 });
@@ -70,6 +71,8 @@ test("lobby includes QR, share icon, and host controls", async () => {
   assert.match(lobby, /id="setting-doctor"/);
   assert.match(lobby, /id="start"/);
   assert.match(app, /addEventListener\("click", copyInvite\)/);
+  assert.match(app, /searchParams\.set\("lang", locale\)/);
+  assert.match(app, /navigator\.clipboard\.writeText\(inviteUrl\.href\)/);
   assert.doesNotMatch(app, /navigator\.share/);
 });
 
