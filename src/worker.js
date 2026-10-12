@@ -336,9 +336,12 @@ async function templatesResponse(request, env) {
   return json(200, Object.fromEntries(entries));
 }
 
-function withSecurityHeaders(response) {
+function withSecurityHeaders(response, extraHeaders = {}) {
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(name, value);
+  }
+  for (const [name, value] of Object.entries(extraHeaders)) {
     headers.set(name, value);
   }
   return new Response(response.body, {
@@ -398,7 +401,16 @@ export default {
       if (url.pathname.startsWith("/api/")) {
         return json(404, { error: "요청을 찾을 수 없습니다." });
       }
-      return withSecurityHeaders(await env.ASSETS.fetch(request));
+      const crawlerHeaders =
+        request.method === "GET" &&
+        url.pathname === "/" &&
+        url.searchParams.has("room")
+          ? { "x-robots-tag": "noindex" }
+          : {};
+      return withSecurityHeaders(
+        await env.ASSETS.fetch(request),
+        crawlerHeaders,
+      );
     } catch (error) {
       return errorResponse(error);
     }

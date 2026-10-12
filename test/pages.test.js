@@ -95,6 +95,37 @@ test("the application keeps localization and responsive styles wired", async () 
   assert.match(styles, /@media \(max-width: 600px\)/);
 });
 
+test("search metadata, sitemap, and private room indexing rules are present", async () => {
+  const [index, robots, sitemap, worker] = await Promise.all([
+    read("public/index.html"),
+    read("public/robots.txt"),
+    read("public/sitemap.xml"),
+    read("src/worker.js"),
+  ]);
+  assert.match(index, /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/"/);
+  assert.match(robots, /Sitemap: https:\/\/midnight-mafia\.fleex\.app\/sitemap\.xml/);
+  assert.match(robots, /Disallow: \/api\//);
+  assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/en\/rules\.html<\/loc>/);
+  assert.doesNotMatch(sitemap, /\?room=/);
+  assert.match(worker, /"x-robots-tag": "noindex"/);
+
+  for (const page of ["guide", "rules", "roles", "privacy"]) {
+    const [ko, en] = await Promise.all([
+      read(`public/${page}.html`),
+      read(`public/en/${page}.html`),
+    ]);
+    assert.match(
+      ko,
+      new RegExp(`rel="canonical" href="https://midnight-mafia\\.fleex\\.app/${page}\\.html"`),
+    );
+    assert.match(
+      en,
+      new RegExp(`rel="canonical" href="https://midnight-mafia\\.fleex\\.app/en/${page}\\.html"`),
+    );
+  }
+});
+
 test("phase UI includes confirmation flows, Mafia coordination, and vote results", async () => {
   const [night, day, vote, voteResult, waiting, app, screens, i18n, styles] =
     await Promise.all([

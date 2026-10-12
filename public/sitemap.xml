@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/</loc>
+    <lastmod>2026-10-12</lastmod>
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/guide.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/guide.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/guide.html" />
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/rules.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/rules.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/rules.html" />
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/roles.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/roles.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/roles.html" />
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/privacy.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/privacy.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/privacy.html" />
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/en/guide.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/guide.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/guide.html" />
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/en/rules.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/rules.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/rules.html" />
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/en/roles.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/roles.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/roles.html" />
+  </url>
+  <url>
+    <loc>https://midnight-mafia.fleex.app/en/privacy.html</loc>
+    <lastmod>2026-10-12</lastmod>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://midnight-mafia.fleex.app/privacy.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://midnight-mafia.fleex.app/en/privacy.html" />
+  </url>
+</urlset>
