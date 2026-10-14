@@ -1,0 +1,49 @@
+<section
+  class="panel result-panel result-day-panel phase-panel"
+  data-result-scene
+>
+  <p class="eyebrow">낮 결과</p>
+  <div class="case-record">
+    <div class="case-shutter" aria-hidden="true">
+      <div class="case-shutter__half case-shutter__half--top">
+        <span class="case-shutter__slat" style="--slat-index: 0"></span>
+        <span class="case-shutter__slat" style="--slat-index: 1"></span>
+        <span class="case-shutter__slat" style="--slat-index: 2"></span>
+        <span class="case-shutter__slat" style="--slat-index: 3"></span>
+        <span class="case-shutter__slat" style="--slat-index: 4"></span>
+        <span class="case-shutter__slat" style="--slat-index: 5"></span>
+      </div>
+      <div class="case-shutter__half case-shutter__half--bottom">
+        <span class="case-shutter__slat" style="--slat-index: 6"></span>
+        <span class="case-shutter__slat" style="--slat-index: 7"></span>
+        <span class="case-shutter__slat" style="--slat-index: 8"></span>
+        <span class="case-shutter__slat" style="--slat-index: 9"></span>
+        <span class="case-shutter__slat" style="--slat-index: 10"></span>
+        <span class="case-shutter__slat" style="--slat-index: 11"></span>
+      </div>
+    </div>
+    <p class="case-record__category" data-text="record"></p>
+    <p class="case-record__status">
+      <span class="case-record__status-icon" aria-hidden="true"></span>
+      <span data-text="outcome"></span>
+    </p>
+    <p class="case-record__stamp" data-text="stamp"></p>
+    <h1 data-text="title"></h1>
+    <p class="case-record__description">
+      <span data-text="reason"></span><span data-text="tally"></span>
+    </p>
+  </div>
+  <button type="button" class="link-button result-skip" data-result-skip>
+    연출 건너뛰기
+  </button>
+  <h2 class="list-title">참가자</h2>
+  <ul class="player-list" data-slot="players"></ul>
+  <button
+    id="confirm-result-day"
+    class="button primary result-confirm"
+    data-if="alive"
+    data-text="action"
+  ></button>
+  <p class="privacy-note" data-if="alive" data-text="progress"></p>
+  <p class="waiting-copy" data-if="dead" data-text="progress"></p>
+</section>

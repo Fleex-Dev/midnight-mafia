@@ -3,9 +3,10 @@ const EN = {
   대기실: "Lobby",
   "역할 확인": "Role reveal",
   밤: "Night",
+  "밤 결과": "Night result",
   낮: "Day",
   투표: "Vote",
-  "투표 결과": "Vote result",
+  "낮 결과": "Day result",
   "게임 종료": "Game over",
   "진행 상태": "Game status",
   "게임 시작 전": "Before the game",
@@ -70,14 +71,14 @@ const EN = {
   경찰: "Detective",
   의사: "Doctor",
   시민: "Citizen",
-  "밤마다 시민 한 명을 제거하세요. 마피아의 수가 시민과 같아지면 승리합니다.":
-    "Eliminate one citizen each night. You win when the Mafia equals the remaining citizens.",
+  "밤마다 시민 팀 한 명을 공격하세요. 마피아의 수가 시민 팀과 같아지면 승리합니다.":
+    "Attack one Citizen-team player each night. You win when the Mafia equals the remaining Citizen team.",
   "밤마다 한 명을 조사해 마피아인지 확인하세요.":
     "Investigate one player each night to learn whether they are Mafia.",
   "밤마다 한 명을 지켜 마피아의 공격을 막으세요.":
     "Protect one player each night from a Mafia attack.",
-  "대화를 통해 마피아를 찾아 낮 투표로 제거하세요.":
-    "Find the Mafia through discussion and eliminate them in the day vote.",
+  "대화를 통해 마피아를 찾고 낮 투표에 참여하세요.":
+    "Find the Mafia through discussion and cast your day vote.",
   "함께하는 마피아:": "Fellow Mafia:",
   "경찰 포함": "Include Detective",
   "밤마다 한 명의 정체를 조사합니다.": "Investigates one player each night.",
@@ -126,10 +127,10 @@ const EN = {
   "눈을 감고 밤이 지나가기를 기다려 주세요.":
     "Close your eyes and wait for the night to pass.",
   누구를: "Who will you",
-  "제거할까요?": "eliminate?",
+  "공격할까요?": "attack?",
   "조사할까요?": "investigate?",
   "보호할까요?": "protect?",
-  제거: "Eliminate",
+  공격: "Attack",
   조사: "Investigate",
   보호: "Protect",
   선택: "Select",
@@ -154,7 +155,10 @@ const EN = {
   "대상을 먼저 선택하세요": "Choose a player first",
   "낮 투표": "Day vote",
   "낮 투표 결과": "Day vote result",
-  "아무도 추방되지 않았습니다.": "No one was eliminated.",
+  "연출 건너뛰기": "Skip animation",
+  "평온한 밤이 지나갔습니다.": "A peaceful night passed.",
+  "아무도 사라지지 않았습니다.": "No one disappeared.",
+  "아무도 추방되지 않았습니다.": "No one was exiled.",
   "최다 득표가 동률입니다.": "The top vote is tied.",
   "과반수 득표자가 없습니다.": "No player received a majority.",
   "결과 확인": "Confirm result",
@@ -257,6 +261,8 @@ const EN = {
   "지금은 투표할 수 없습니다.": "You cannot vote now.",
   "지금은 투표 결과를 확인할 수 없습니다.":
     "The vote result cannot be confirmed now.",
+  "지금은 밤 결과를 확인할 수 없습니다.":
+    "The night result cannot be confirmed now.",
   "탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.":
     "Eliminated players are not included in the confirmation count.",
   "탈락한 참가자는 투표를 준비할 수 없습니다.":
@@ -327,7 +333,7 @@ function dynamicEnglish(text) {
   if (
     (match = text.match(/^최다 득표 (\d+)표 · 추방 기준 (\d+)표$/))
   )
-    return `Top vote: ${match[1]} · ${match[2]} needed to eliminate`;
+    return `Top vote: ${match[1]} · ${match[2]} needed to exile`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 선택을 마쳤습니다\.$/)))
     return `${match[1]} of ${match[2]} players have chosen.`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 결과를 확인했습니다\.$/)))
@@ -344,16 +350,28 @@ function dynamicEnglish(text) {
     return `Night ${match[1]}. Choose your action on your own screen.`;
   if (
     (match = text.match(
-      /^(.+) 님이 밤사이 사라졌습니다\. 정체는 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/,
+      /^(.+) 님이 밤사이 희생되었습니다\. 정체는 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/,
     ))
   )
-    return `${match[1]} disappeared overnight. Their role was ${EN[match[2]] || match[2]}.`;
+    return `${match[1]} was the night's victim. Their role was ${EN[match[2]] || match[2]}.`;
   if (
     (match = text.match(
       /^(.+) 님이 투표로 지목됐습니다\. 정체는 (.+)였습니다\.$/,
     ))
   )
-    return `${match[1]} was eliminated by vote. Their role was ${EN[match[2]] || match[2]}.`;
+    return `${match[1]} was exiled by vote. Their role was ${EN[match[2]] || match[2]}.`;
+  if (
+    (match = text.match(
+      /^(.+) 님이 투표로 추방되었습니다\. 정체는 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/,
+    ))
+  )
+    return `${match[1]} was exiled by vote. Their role was ${EN[match[2]] || match[2]}.`;
+  if (
+    (match = text.match(
+      /^(.+) 님이 투표로 마피아임이 밝혀졌습니다\.$/,
+    ))
+  )
+    return `${match[1]} was identified as Mafia by vote.`;
   if (
     (match = text.match(
       /^(.+) 님은 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/,
@@ -362,10 +380,10 @@ function dynamicEnglish(text) {
     return `${match[1]} was ${EN[match[2]] || match[2]}.`;
   if (
     (match = text.match(
-      /^(.+) 님이 밤사이 사라졌습니다\. 정체는 (마피아|경찰|의사|시민)(?:이)?었습니다\. (모든 마피아를 찾아냈습니다\. 시민 팀 승리!|마피아가 마을을 장악했습니다\. 마피아 팀 승리!)$/,
+      /^(.+) 님이 밤사이 희생되었습니다\. 정체는 (마피아|경찰|의사|시민)(?:이)?었습니다\. (모든 마피아를 찾아냈습니다\. 시민 팀 승리!|마피아가 마을을 장악했습니다\. 마피아 팀 승리!)$/,
     ))
   )
-    return `${match[1]} disappeared overnight. Their role was ${EN[match[2]] || match[2]}. ${EN[match[3]] || match[3]}`;
+    return `${match[1]} was the night's victim. Their role was ${EN[match[2]] || match[2]}. ${EN[match[3]] || match[3]}`;
   return text;
 }
 

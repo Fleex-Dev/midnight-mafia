@@ -21,9 +21,10 @@ const phaseLabels = {
   lobby: "대기실",
   reveal: "역할 확인",
   night: "밤",
+  "result-night": "밤 결과",
   day: "낮",
   vote: "투표",
-  "vote-result": "투표 결과",
+  "result-day": "낮 결과",
   ended: "게임 종료",
 };
 
@@ -43,6 +44,7 @@ let reconnectDelay = 1000;
 let roleRevealed = false;
 let roleVisible = false;
 let busy = false;
+let resultAnimation = { key: "", endAt: 0, complete: false, timer: null };
 
 // ============================================================
 // 2. 공통 유틸
@@ -449,6 +451,53 @@ function gameStatusPanel() {
   return panel;
 }
 
+function setupResultAnimation(content) {
+  if (!content.matches("[data-result-scene]")) return;
+
+  const result = state.dayResult || state.nightResult || {};
+  const key = [
+    state.code,
+    state.phase,
+    state.round,
+    result.playerId || result.reason || "none",
+  ].join(":");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const duration = 4100;
+
+  if (resultAnimation.key !== key) {
+    clearTimeout(resultAnimation.timer);
+    resultAnimation = {
+      key,
+      endAt: Date.now() + duration,
+      complete: reduceMotion,
+      timer: null,
+    };
+  }
+
+  const confirmButton = content.querySelector(".result-confirm");
+  const skipButton = content.querySelector("[data-result-skip]");
+
+  const finish = () => {
+    if (resultAnimation.key !== key) return;
+    clearTimeout(resultAnimation.timer);
+    resultAnimation.complete = true;
+    content.classList.remove("is-revealing");
+    skipButton?.setAttribute("hidden", "");
+    if (confirmButton) confirmButton.disabled = Boolean(state.you.resultReady);
+  };
+
+  const remaining = resultAnimation.endAt - Date.now();
+  if (resultAnimation.complete || remaining <= 0) {
+    finish();
+    return;
+  }
+
+  content.classList.add("is-revealing");
+  if (confirmButton) confirmButton.disabled = true;
+  skipButton?.addEventListener("click", finish);
+  resultAnimation.timer = setTimeout(finish, remaining);
+}
+
 // ============================================================
 // 9. 랜딩 화면
 // ============================================================
@@ -640,9 +689,10 @@ function renderGame() {
     lobby: screens.renderLobby,
     reveal: screens.renderReveal,
     night: screens.renderNight,
+    "result-night": screens.renderNightResult,
     day: screens.renderDay,
     vote: screens.renderVote,
-    "vote-result": screens.renderVoteResult,
+    "result-day": screens.renderDayResult,
     ended: screens.renderEnded,
   }[state.phase];
 
@@ -672,6 +722,7 @@ function renderGame() {
   );
 
   localize(app);
+  setupResultAnimation(content);
   bindGameEvents();
 }
 
@@ -801,9 +852,15 @@ function bindGameEvents() {
   });
 
   document
-    .querySelector("#confirm-vote-result")
+    .querySelector("#confirm-result-day")
     ?.addEventListener("click", () => {
-      sendAction({ type: "confirm-vote-result" });
+      sendAction({ type: "confirm-result-day" });
+    });
+
+  document
+    .querySelector("#confirm-result-night")
+    ?.addEventListener("click", () => {
+      sendAction({ type: "confirm-result-night" });
     });
 
   // 참가자 강퇴

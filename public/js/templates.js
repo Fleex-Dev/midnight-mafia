@@ -9,7 +9,8 @@ const NAMES = [
   "night",
   "day",
   "vote",
-  "vote-result",
+  "result-day",
+  "result-night",
   "ended",
   "header",
   "footer",
@@ -23,7 +24,8 @@ export async function loadTemplates() {
   if (!response.ok) throw new Error("화면 템플릿을 불러오지 못했습니다.");
   const sources = await response.json();
   for (const name of NAMES) {
-    if (typeof sources[name] !== "string") throw new Error(`템플릿 누락: ${name}`);
+    if (typeof sources[name] !== "string")
+      throw new Error(`템플릿 누락: ${name}`);
     const template = document.createElement("template");
     template.innerHTML = sources[name];
     cache.set(name, template);

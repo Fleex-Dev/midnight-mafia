@@ -3,14 +3,24 @@ const supportedPreferences = ["auto", "ko", "en"];
 const queryLocale = new URLSearchParams(location.search).get("lang");
 
 let savedPreference = null;
-try { savedPreference = localStorage.getItem(preferenceKey); } catch {}
+try {
+  savedPreference = localStorage.getItem(preferenceKey);
+} catch {
+  // Storage can be unavailable in private or restricted browsing contexts.
+}
 
 const localePreference = ["ko", "en"].includes(queryLocale)
   ? queryLocale
-  : supportedPreferences.includes(savedPreference) ? savedPreference : "auto";
+  : supportedPreferences.includes(savedPreference)
+    ? savedPreference
+    : "auto";
 
 if (["ko", "en"].includes(queryLocale)) {
-  try { localStorage.setItem(preferenceKey, queryLocale); } catch {}
+  try {
+    localStorage.setItem(preferenceKey, queryLocale);
+  } catch {
+    // Keep the selected language for this navigation even without storage.
+  }
 }
 
 function detectedLocale() {
@@ -33,8 +43,16 @@ if (desiredLocale !== currentLocale) {
   if (selector) {
     selector.value = localePreference;
     selector.addEventListener("change", (event) => {
-      const next = supportedPreferences.includes(event.target.value) ? event.target.value : "auto";
-      try { localStorage.setItem(preferenceKey, next); } catch {}
+      const next = supportedPreferences.includes(event.target.value)
+        ? event.target.value
+        : "auto";
+
+      try {
+        localStorage.setItem(preferenceKey, next);
+      } catch {
+        // Navigation still works when the preference cannot be persisted.
+      }
+
       const targetLocale = next === "auto" ? detectedLocale() : next;
       const targetPath = pagePath(targetLocale);
       if (targetPath === location.pathname) return;

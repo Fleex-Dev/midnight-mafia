@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>결과 연출 미리보기</title>
+  <link rel="icon" type="image/svg+xml" href="/icons/site-icon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/role-icons.css" />
+  <style>
+    .preview-controls { display:flex; flex-wrap:wrap; align-items:end; gap:.65rem; width:min(100%,58rem); margin:0 auto 1rem; padding:1rem; border:1px solid var(--line); background:var(--panel); }
+    .preview-field { display:flex; flex:1 1 220px; flex-direction:column; gap:.4rem; min-width:0; }
+    .preview-field label { margin:0; color:var(--muted); font-size:.72rem; }
+    .preview-controls select { width:100%; height:2.65rem; padding:0 .75rem; border:1px solid var(--line-strong); border-radius:.15rem; background:var(--field); color:var(--ink); font-size:.8rem; cursor:pointer; }
+    .preview-controls .preview-button { width:auto; min-height:2.65rem; margin:0; padding:0 1rem; white-space:nowrap; font-size:.78rem; }
+    .preview-auto { display:flex; align-items:center; gap:.5rem; min-height:2.65rem; margin:0; padding:0 .3rem; color:var(--muted); font-size:.75rem; cursor:pointer; }
+    .preview-auto input { width:1rem; min-height:1rem; height:1rem; margin:0; accent-color:var(--red); cursor:pointer; }
+    #preview-status { width:min(100%,58rem); margin:0 auto 1rem; color:var(--muted); font-size:.72rem; }
+    #preview-container [hidden] { display:none!important; }
+    @media(max-width:600px) { .preview-controls { padding:.75rem; } .preview-field { flex-basis:100%; } .preview-controls .preview-button { flex:1; } .preview-auto { width:100%; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="moon" aria-hidden="true"></span><strong>심야 마피아</strong></div>
+      <div class="room-badge"><span>미리보기</span><b>RESULT</b></div>
+    </header>
+    <div class="preview-controls" aria-label="결과 시나리오 선택">
+      <div class="preview-field"><label for="case-select">결과 케이스</label><select id="case-select"></select></div>
+      <button id="preview-play" type="button" class="button secondary preview-button">다시 재생</button>
+      <button id="preview-next" type="button" class="button primary preview-button">다음 케이스 →</button>
+      <label class="preview-auto"><input id="preview-auto" type="checkbox" /> 자동 전환</label>
+    </div>
+    <p id="preview-status" role="status" aria-live="polite"></p>
+    <div id="preview-container"></div>
+  </main>
+  <script type="module" src="/result-preview.js"></script>
+</body>
+</html>

@@ -468,6 +468,10 @@ button {
   text-transform: uppercase;
 }
 
+.article-panel > header .eyebrow {
+  margin-bottom: 2.5rem;
+}
+
 h1,
 h2,
 h3 {
@@ -1350,15 +1354,14 @@ details .player-list {
   margin-top: 0.75rem;
 }
 
-.vote-result-panel {
+.result-panel {
+  overflow: hidden;
   text-align: center;
 }
 
-.vote-result-panel .role-symbol {
-  margin-inline: auto;
-}
-
-.vote-result-panel h1 {
+.result-panel h1 {
+  position: relative;
+  z-index: 3;
   max-width: 18ch;
   margin: 0.8rem auto;
   font-size: clamp(1.8rem, 7vw, 3rem);
@@ -1366,12 +1369,18 @@ details .player-list {
   word-break: keep-all;
 }
 
-.vote-result-panel .player-list {
+.result-skip {
+  margin: 0.55rem auto 0;
+  color: var(--dim);
+  font-size: 0.68rem;
+}
+
+.result-panel .player-list {
   margin-top: 1.1rem;
   text-align: left;
 }
 
-.vote-result-panel .button {
+.result-panel .button {
   width: 100%;
   margin-top: 1rem;
 }
@@ -1555,6 +1564,10 @@ details .player-list {
     margin: 0.85rem 0 1rem;
   }
 
+  .result-panel h1 {
+    font-size: clamp(1.65rem, 8vw, 2.3rem);
+  }
+
   .invite-card {
     grid-template-columns: 4.5rem minmax(0, 1fr);
     gap: 0.65rem;
@@ -1626,6 +1639,367 @@ details .player-list {
     scroll-behavior: auto !important;
     transition: none !important;
   }
+
+  .result-skip {
+    display: none;
+  }
 }
 
 /* Role SVGs are styled separately in /css/role-icons.css. */
+
+/* 낮/밤 결과: 셔터 → 도장 → 사건 기록 공개 */
+.result-panel .case-record {
+  --case-accent: var(--red-light);
+  --case-tint: rgba(201, 52, 66, 0.12);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(21rem, 50vh, 28rem);
+  margin: 0.8rem 0 0;
+  padding: clamp(1.2rem, 4vw, 2.4rem);
+  overflow: hidden;
+  border-block: 1px solid var(--line);
+  box-shadow: inset 0 3px 0 var(--case-accent);
+  background:
+    radial-gradient(circle at 50% 35%, var(--case-tint), transparent 48%),
+    linear-gradient(110deg, #0b0a09, #16100f 70%, #0b0a09);
+}
+
+.result-night-panel .case-record {
+  --case-accent: #9aabc9;
+  --case-tint: rgba(105, 132, 181, 0.12);
+  background:
+    radial-gradient(circle at 50% 35%, var(--case-tint), transparent 48%),
+    linear-gradient(180deg, #0a0a0c, #111219 62%, #09090b);
+}
+
+.result-panel.case-danger .case-record {
+  --case-accent: #d95663;
+  --case-tint: rgba(217, 86, 99, 0.17);
+}
+
+.result-panel.case-success .case-record {
+  --case-accent: #79bc8d;
+  --case-tint: rgba(121, 188, 141, 0.16);
+}
+
+.result-panel.case-safe .case-record {
+  --case-accent: #85b9a0;
+  --case-tint: rgba(133, 185, 160, 0.14);
+}
+
+.result-panel.case-neutral .case-record {
+  --case-accent: var(--gold);
+  --case-tint: rgba(184, 154, 102, 0.12);
+}
+
+.result-panel .result-card[data-result-status="investigation"] {
+  border: 1px solid #526d85;
+  border-left: 4px solid #9aabc9;
+  background: rgba(86, 114, 156, 0.1);
+}
+
+.result-panel .result-card[data-result-status="investigation"] span {
+  display: inline-grid;
+  grid-template-columns: 1.05em auto;
+  align-items: center;
+  gap: 0.4em;
+  color: #aebbd2;
+  line-height: 1.15;
+}
+
+.result-panel .result-card[data-result-status="investigation"] span::before {
+  display: block;
+  width: 1.05em;
+  height: 1.05em;
+  background: currentColor;
+  content: "";
+  -webkit-mask: url("../icons/results/investigation.svg") center / contain
+    no-repeat;
+  mask: url("../icons/results/investigation.svg") center / contain no-repeat;
+}
+
+.result-panel .case-shutter {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.result-panel .case-shutter__half {
+  position: absolute;
+  left: 0;
+  display: grid;
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  width: 100%;
+  height: 50%;
+  will-change: transform;
+}
+
+.result-panel .case-shutter__half--top {
+  top: 0;
+}
+
+.result-panel .case-shutter__half--bottom {
+  bottom: 0;
+}
+
+.result-panel .case-shutter__slat {
+  display: block;
+  min-height: 0;
+  border-bottom: 1px solid rgba(184, 154, 102, 0.32);
+  background: #100e0d;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.result-panel .case-shutter__slat:nth-child(even) {
+  transform-origin: right center;
+}
+
+.result-night-panel .case-shutter__slat {
+  border-bottom-color: rgba(145, 163, 194, 0.34);
+  background: #0b0c12;
+}
+
+.result-panel .case-record__category,
+.result-panel .case-record__status,
+.result-panel .case-record h1,
+.result-panel .case-record__description {
+  position: relative;
+  z-index: 3;
+}
+
+.result-panel .case-record__category {
+  margin: 0 0 1.15rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.result-panel .case-record__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38em;
+  margin: 0 0 1.1rem;
+  color: var(--case-accent);
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+
+.result-panel .case-record__status > [data-text="outcome"] {
+  display: block;
+  line-height: 1.15;
+}
+
+.case-record__status-icon {
+  --status-icon: none;
+  display: block;
+  flex: 0 0 1em;
+  width: 1em;
+  height: 1em;
+  align-self: center;
+  background: currentColor;
+  -webkit-mask: var(--status-icon) center / contain no-repeat;
+  mask: var(--status-icon) center / contain no-repeat;
+}
+
+.result-panel[data-result-icon="day-exile"] .case-record__status-icon {
+  --status-icon: url("../icons/results/day-exile.svg");
+}
+
+.result-panel[data-result-icon="night-victim"] .case-record__status-icon {
+  --status-icon: url("../icons/results/night-victim.svg");
+}
+
+.result-panel[data-result-icon="mafia-caught"] .case-record__status-icon {
+  --status-icon: url("../icons/results/mafia-caught.svg");
+}
+
+.result-panel[data-result-icon="safe"] .case-record__status-icon {
+  --status-icon: url("../icons/results/safe.svg");
+}
+
+.result-panel[data-result-icon="no-elimination"] .case-record__status-icon {
+  --status-icon: url("../icons/results/no-elimination.svg");
+}
+
+.result-panel .case-record__stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: max-content;
+  max-width: 88%;
+  margin: 0;
+  padding: 0.2em 0.34em;
+  border: 0.13em double currentColor;
+  color: var(--case-accent);
+  font:
+    800 clamp(1.55rem, 8.2vw, 5rem) / 1.15 ui-monospace,
+    monospace;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0.12;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(var(--stamp-angle, -8deg));
+}
+
+.result-night-panel .case-record__stamp {
+  --stamp-angle: 6deg;
+}
+
+.result-panel .case-record h1 {
+  margin: 0.9rem auto;
+  text-shadow: 0 1px 3px #100e0d;
+}
+
+.result-panel .case-record__description {
+  min-height: 2.8em;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+  text-shadow: 0 1px 3px #100e0d;
+}
+
+.result-panel .case-record__description span {
+  display: block;
+}
+
+.result-panel.is-revealing .case-shutter__slat {
+  animation: case-cross-enter 0.7s calc(var(--slat-index) * 24ms)
+    cubic-bezier(0.3, 0.05, 0.25, 1) both;
+}
+
+.result-panel.is-revealing .case-shutter__half--top {
+  animation: case-open-top 0.85s 1.08s cubic-bezier(0.66, 0, 0.22, 1) both;
+}
+
+.result-panel.is-revealing .case-shutter__half--bottom {
+  animation: case-open-bottom 0.85s 1.08s cubic-bezier(0.66, 0, 0.22, 1) both;
+}
+
+.result-panel.is-revealing .case-record__stamp {
+  animation: case-stamp-impact 1.08s 2.03s cubic-bezier(0.18, 0.85, 0.22, 1)
+    both;
+}
+
+.result-panel.is-revealing .case-record__category,
+.result-panel.is-revealing .case-record__status {
+  animation: case-entry 0.42s 3.08s ease both;
+}
+
+.result-panel.is-revealing .case-record h1 {
+  animation: case-entry 0.52s 3.24s ease both;
+}
+
+.result-panel.is-revealing .case-record__description {
+  animation: case-entry 0.5s 3.38s ease both;
+}
+
+.result-panel.is-revealing .list-title,
+.result-panel.is-revealing .player-list,
+.result-panel.is-revealing .result-card,
+.result-panel.is-revealing .result-confirm,
+.result-panel.is-revealing .privacy-note,
+.result-panel.is-revealing .waiting-copy {
+  animation: result-controls 0.4s 3.58s ease both;
+}
+
+@keyframes case-cross-enter {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes case-open-top {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-102%);
+  }
+}
+
+@keyframes case-open-bottom {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(102%);
+  }
+}
+
+@keyframes case-entry {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes case-stamp-impact {
+  0% {
+    opacity: 0;
+    filter: blur(0.3rem);
+    transform: translate(-50%, -50%) rotate(var(--stamp-angle, -8deg))
+      scale(2.3);
+  }
+  33% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate(-50%, -50%) rotate(var(--stamp-angle, -8deg))
+      scale(0.94);
+  }
+  43% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--stamp-angle, -8deg))
+      scale(1.06);
+  }
+  61% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) rotate(var(--stamp-angle, -8deg)) scale(1);
+  }
+  100% {
+    opacity: 0.12;
+    filter: blur(0);
+    transform: translate(-50%, -50%) rotate(var(--stamp-angle, -8deg)) scale(1);
+  }
+}
+
+@keyframes result-controls {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .result-panel .case-record {
+    min-height: 17rem;
+    padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-panel .case-shutter {
+    display: none;
+  }
+}

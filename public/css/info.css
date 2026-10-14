@@ -1,42 +1,369 @@
-.info-shell { width: 100%; }
-.info-shell .topbar, .info-shell .site-footer { width: min(100%, 64rem); }
-.info-shell .brand { color: var(--ink); text-decoration: none; }
-.info-actions { display: flex; align-items: center; gap: .65rem; }
-.info-actions .language-select { max-width: 7.3rem; }
-.back-link { color: #978d84; font-size: .74rem; text-decoration: none; }
-.back-link:hover { color: var(--ink); }
-.article-panel { width: min(100%, 64rem); padding: clamp(1.25rem, 4vw, 3.2rem); }
-.article-panel > header { position: relative; padding: 0 0 1.7rem; border-bottom: 1px solid var(--line); }
-.article-panel > header::before { content: ""; display: block; width: 2.75rem; height: .25rem; margin-bottom: 1rem; background: var(--red); }
-.article-panel h1 { max-width: 14ch; font-size: clamp(2.8rem, 8vw, 5.6rem); line-height: .92; word-break: keep-all; overflow-wrap: break-word; }
-.article-panel .lead { max-width: 46rem; margin: 1rem 0 0; color: var(--muted); font-size: .94rem; line-height: 1.75; }
-.article-nav { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1.2rem 0 0; }
-.article-nav a { padding: .4rem .56rem; border: 1px solid var(--line); border-radius: 0; color: #aba097; font: 680 .68rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; text-decoration: none; text-transform: uppercase; }
-.article-nav a:hover { border-color: var(--line-strong); color: #fff; }
-.article-nav a[aria-current="page"] { border-color: #8a323a; background: var(--red-soft); color: #ef949c; }
-.article-section { padding: 1.6rem 0; border-bottom: 1px dashed #3b332e; }
-.article-section:last-child { padding-bottom: 0; border-bottom: 0; }
-.article-section h2 { margin: 0 0 .78rem; color: #e8ded1; font-size: 1.25rem; letter-spacing: -.02em; }
-.article-section h3 { margin: 1.25rem 0 .42rem; color: #d7cbbb; font-size: 1rem; }
-.article-section p, .article-section li { color: #b8ada2; font-size: .88rem; line-height: 1.8; }
-.article-section p { margin: .55rem 0; }
-.article-section ul, .article-section ol { margin: .65rem 0 0; padding-left: 1.2rem; }
-.article-section li + li { margin-top: .45rem; }
-.step-list { display: grid; gap: 0; padding: 0 !important; border-top: 1px solid var(--line); list-style: none; counter-reset: steps; }
-.step-list li { position: relative; min-height: 3.55rem; padding: .9rem .6rem .9rem 3.4rem; border-bottom: 1px solid var(--line); counter-increment: steps; }
-.step-list li::before { content: counter(steps, decimal-leading-zero); position: absolute; left: .25rem; top: .9rem; color: var(--red-light); font: 750 .78rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; }
-.role-guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .7rem; }
-.role-guide-card { padding: 1rem; border: 1px solid var(--line); border-radius: 0; background: #14110f; }
-.role-guide-card .role-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; margin-bottom: .75rem; border: 1px solid #733039; background: var(--red-soft); color: #e86f79; font: 1.25rem/1 Georgia, serif; }
-.role-guide-card.cop .role-icon { border-color: #46536a; background: rgba(145,163,194,.08); color: #91a3c2; }
-.role-guide-card.doctor .role-icon { border-color: #456451; background: rgba(120,182,140,.08); color: #78b68c; }
-.role-guide-card.citizen .role-icon { border-color: #65573e; background: rgba(196,171,122,.07); color: #c4ab7a; }
-.role-guide-card h2 { margin: 0 0 .4rem; font-size: 1.06rem; }
-.role-guide-card p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.7; }
-.note-box { margin-top: 1rem; padding: .85rem 1rem; border: 1px dashed #665243; border-left: 4px solid var(--gold); background: rgba(184,154,102,.055); color: #c1b4a5; font-size: .8rem; line-height: 1.7; }
-.policy-date { color: #766e67; font: .7rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.info-shell {
+  width: 100%;
+}
+
+.info-shell .topbar,
+.info-shell .site-footer {
+  width: min(100%, 64rem);
+}
+
+.info-shell .brand {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.info-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.info-actions .language-select {
+  max-width: 7.3rem;
+}
+
+.back-link {
+  color: #978d84;
+  font-size: 0.74rem;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--ink);
+}
+
+.article-panel {
+  width: min(100%, 64rem);
+  padding: clamp(1.35rem, 4vw, 3.25rem);
+}
+
+.article-panel > header {
+  position: relative;
+  padding-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.article-panel > header::before {
+  display: block;
+  width: 2.75rem;
+  height: 0.25rem;
+  margin-bottom: 1rem;
+  background: var(--red);
+  content: "";
+}
+
+.article-panel h1 {
+  max-width: 18ch;
+  font-size: clamp(2.5rem, 7vw, 5.25rem);
+  line-height: 0.95;
+  overflow-wrap: break-word;
+  word-break: keep-all;
+}
+
+.article-panel .lead {
+  max-width: 44rem;
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: clamp(0.9rem, 1.4vw, 1rem);
+  line-height: 1.75;
+}
+
+.article-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 1.35rem;
+}
+
+.article-nav a {
+  display: grid;
+  min-height: 2.35rem;
+  padding: 0.55rem 0.65rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  color: #aba097;
+  font: 680 0.68rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.article-nav a:hover {
+  border-color: var(--line-strong);
+  color: #fff;
+}
+
+.article-nav a[aria-current="page"] {
+  border-color: #8a323a;
+  background: var(--red-soft);
+  color: #ef949c;
+}
+
+.article-section {
+  display: grid;
+  grid-template-columns: minmax(9.5rem, 0.34fr) minmax(0, 1fr);
+  gap: 0.65rem clamp(1.5rem, 4vw, 3rem);
+  padding: clamp(1.6rem, 3vw, 2.35rem) 0;
+  border-bottom: 1px dashed #3b332e;
+}
+
+.article-section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.article-section > h2 {
+  grid-column: 1;
+  margin: 0;
+  color: #e8ded1;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.article-section > :not(h2) {
+  grid-column: 2;
+}
+
+.article-section > .role-guide-grid {
+  grid-column: 1 / -1;
+}
+
+.article-section h3 {
+  margin: 0.7rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(90, 75, 67, 0.55);
+  color: #d7cbbb;
+  font-size: 0.98rem;
+}
+
+.article-section h3:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.article-section p,
+.article-section li {
+  color: #b8ada2;
+  font-size: 0.88rem;
+  line-height: 1.8;
+}
+
+.article-section p {
+  margin: 0.45rem 0;
+}
+
+.article-section ul,
+.article-section ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.article-section li + li {
+  margin-top: 0.5rem;
+}
+
+.step-list {
+  display: grid;
+  gap: 0;
+  padding: 0 !important;
+  border-top: 1px solid var(--line);
+  list-style: none;
+  counter-reset: steps;
+}
+
+.step-list li {
+  position: relative;
+  min-height: 3.55rem;
+  padding: 1rem 0.5rem 1rem 3.25rem;
+  border-bottom: 1px solid var(--line);
+  counter-increment: steps;
+}
+
+.step-list li::before {
+  position: absolute;
+  top: 1rem;
+  left: 0.25rem;
+  color: var(--red-light);
+  content: counter(steps, decimal-leading-zero);
+  font: 750 0.78rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+}
+
+.guide-path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.guide-path-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  background: #14110f;
+}
+
+.guide-path-card .guide-path-label {
+  margin: 0 0 0.35rem;
+  color: var(--red-light);
+  font: 750 0.66rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.guide-path-card h3 {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.guide-path-card ol {
+  padding-left: 1.15rem;
+}
+
+.guide-flow-list strong {
+  color: #e8ded1;
+}
+
+.guide-principles {
+  padding-left: 0 !important;
+  list-style: none;
+}
+
+.guide-principles li {
+  position: relative;
+  padding: 0.85rem 0 0.85rem 1.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.guide-principles li:first-child {
+  border-top: 1px solid var(--line);
+}
+
+.guide-principles li::before {
+  position: absolute;
+  top: 1.35rem;
+  left: 0.25rem;
+  width: 0.42rem;
+  height: 0.42rem;
+  border: 1px solid var(--red-light);
+  content: "";
+  transform: rotate(45deg);
+}
+
+.role-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.role-guide-card {
+  min-width: 0;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: #14110f;
+}
+
+.role-guide-card .role-icon {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  margin-bottom: 0.8rem;
+  place-items: center;
+  border: 1px solid #733039;
+  background: var(--red-soft);
+  color: #e86f79;
+}
+
+.role-guide-card.cop .role-icon {
+  border-color: #46536a;
+  background: rgba(145, 163, 194, 0.08);
+  color: #91a3c2;
+}
+
+.role-guide-card.doctor .role-icon {
+  border-color: #456451;
+  background: rgba(120, 182, 140, 0.08);
+  color: #78b68c;
+}
+
+.role-guide-card.citizen .role-icon {
+  border-color: #65573e;
+  background: rgba(196, 171, 122, 0.07);
+  color: #c4ab7a;
+}
+
+.role-guide-card h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.06rem;
+}
+
+.role-guide-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.note-box {
+  margin-top: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed #665243;
+  border-left: 4px solid var(--gold);
+  background: rgba(184, 154, 102, 0.055);
+  color: #c1b4a5;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.policy-date {
+  color: #766e67;
+  font: 0.7rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (max-width: 720px) {
+  .article-section {
+    display: block;
+  }
+
+  .article-section > h2 {
+    margin-bottom: 0.9rem;
+  }
+
+  .article-section h3 {
+    margin-top: 1rem;
+  }
+}
+
 @media (max-width: 600px) {
-  .role-guide-grid { grid-template-columns: 1fr; }
-  .info-actions .back-link { display: none; }
-  .article-panel { padding: 1rem; }
+  .info-shell .article-panel {
+    padding: 1rem;
+  }
+
+  .article-panel h1 {
+    font-size: clamp(2.25rem, 14vw, 3.25rem);
+  }
+
+  .article-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .role-guide-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-path-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-actions .back-link {
+    display: none;
+  }
+
+  .step-list li {
+    padding-right: 0.2rem;
+    padding-left: 2.8rem;
+  }
 }

@@ -6,7 +6,7 @@ export const ROLE_INFO = {
     icon: "◆",
     team: "mafia",
     description:
-      "밤마다 시민 한 명을 제거하세요. 마피아의 수가 시민과 같아지면 승리합니다.",
+      "밤마다 시민 팀 한 명을 공격하세요. 마피아의 수가 시민 팀과 같아지면 승리합니다.",
   },
   cop: {
     name: "경찰",
@@ -24,9 +24,18 @@ export const ROLE_INFO = {
     name: "시민",
     icon: "●",
     team: "citizen",
-    description: "대화를 통해 마피아를 찾아 낮 투표로 제거하세요.",
+    description: "대화를 통해 마피아를 찾고 낮 투표에 참여하세요.",
   },
 };
+
+export const RESULT_STATUS = Object.freeze({
+  DAY_EXILE: "day-exile",
+  INVESTIGATION: "investigation",
+  MAFIA_CAUGHT: "mafia-caught",
+  NIGHT_VICTIM: "night-victim",
+  NO_ELIMINATION: "no-elimination",
+  SAFE: "safe",
+});
 
 export class GameError extends Error {
   constructor(message, status = 400) {
@@ -161,33 +170,29 @@ function roleWas(role) {
   return `${name}${hasFinalConsonant ? "이었습니다" : "였습니다"}`;
 }
 
-function checkWinner(room, precedingAnnouncement = "") {
+function winnerFor(room) {
   const alive = alivePlayers(room);
   const mafia = alive.filter((player) => player.role === "mafia").length;
   const citizens = alive.length - mafia;
-  if (mafia === 0) {
-    room.phase = "ended";
-    room.winner = "citizen";
-    room.announcement = [
-      precedingAnnouncement,
-      "모든 마피아를 찾아냈습니다. 시민 팀 승리!",
-    ]
-      .filter(Boolean)
-      .join(" ");
-    return true;
-  }
-  if (mafia >= citizens) {
-    room.phase = "ended";
-    room.winner = "mafia";
-    room.announcement = [
-      precedingAnnouncement,
-      "마피아가 마을을 장악했습니다. 마피아 팀 승리!",
-    ]
-      .filter(Boolean)
-      .join(" ");
-    return true;
-  }
-  return false;
+  if (mafia === 0) return "citizen";
+  if (mafia >= citizens) return "mafia";
+  return null;
+}
+
+function checkWinner(room, precedingAnnouncement = "") {
+  const winner = winnerFor(room);
+  if (!winner) return false;
+  room.phase = "ended";
+  room.winner = winner;
+  room.announcement = [
+    precedingAnnouncement,
+    winner === "citizen"
+      ? "모든 마피아를 찾아냈습니다. 시민 팀 승리!"
+      : "마피아가 마을을 장악했습니다. 마피아 팀 승리!",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return true;
 }
 
 function recordInvestigation(room, player, action) {
@@ -196,10 +201,46 @@ function recordInvestigation(room, player, action) {
   const target = room.players.get(action.targetId);
   if (!target) return;
   room.investigations.set(player.id, {
+    status: RESULT_STATUS.INVESTIGATION,
     round: room.round,
     targetName: target.name,
     isMafia: target.role === "mafia",
   });
+}
+
+function normalizeDayResult(result) {
+  if (!result) return null;
+  if (result.status) return result;
+  return {
+    ...result,
+    status: result.role
+      ? result.role === "mafia"
+        ? RESULT_STATUS.MAFIA_CAUGHT
+        : RESULT_STATUS.DAY_EXILE
+      : RESULT_STATUS.NO_ELIMINATION,
+  };
+}
+
+function normalizeNightResult(result) {
+  if (!result) return null;
+  if (result.status) return result;
+  return {
+    ...result,
+    status: result.role
+      ? RESULT_STATUS.NIGHT_VICTIM
+      : RESULT_STATUS.SAFE,
+  };
+}
+
+function normalizeInvestigations(entries = []) {
+  return new Map(
+    entries.map(([playerId, result]) => [
+      playerId,
+      result?.status
+        ? result
+        : { ...result, status: RESULT_STATUS.INVESTIGATION },
+    ]),
+  );
 }
 
 function beginNight(room) {
@@ -208,7 +249,8 @@ function beginNight(room) {
   room.actions.clear();
   room.dayReady.clear();
   room.resultReady.clear();
-  room.voteResult = null;
+  room.dayResult = null;
+  room.nightResult = null;
   room.announcement = `${room.round}번째 밤입니다. 각자의 화면에서 행동을 선택하세요.`;
 }
 
@@ -219,6 +261,8 @@ function beginDay(room, announcement = "", openingDay = false) {
   room.actions.clear();
   room.dayReady.clear();
   room.resultReady.clear();
+  room.dayResult = null;
+  room.nightResult = null;
   if (announcement) room.announcement = announcement;
 }
 
@@ -231,7 +275,7 @@ function beginVote(room) {
   room.actions.clear();
   room.dayReady.clear();
   room.resultReady.clear();
-  room.voteResult = null;
+  room.dayResult = null;
 }
 
 function resolveNight(room) {
@@ -267,17 +311,31 @@ function resolveNight(room) {
   const cop = required.find((player) => player.role === "cop");
   if (cop) recordInvestigation(room, cop, room.actions.get(cop.id));
 
-  let nightResult;
+  let announcement;
   if (victim && victim.id !== protectedId) {
     victim.alive = false;
-    nightResult = `${victim.name} 님이 밤사이 사라졌습니다. 정체는 ${roleWas(victim.role)}.`;
+    room.nightResult = {
+      status: RESULT_STATUS.NIGHT_VICTIM,
+      reason: "mafia-attack",
+      playerId: victim.id,
+      playerName: victim.name,
+      role: victim.role,
+      roleName: ROLE_INFO[victim.role].name,
+      round: room.round,
+    };
+    announcement = `${victim.name} 님이 밤사이 희생되었습니다. 정체는 ${roleWas(victim.role)}.`;
   } else {
-    nightResult =
-      "평온한 아침입니다. 지난밤에는 아무도 사라지지 않았습니다.";
+    room.nightResult = {
+      status: RESULT_STATUS.SAFE,
+      reason: "protected",
+      round: room.round,
+    };
+    announcement = "평온한 아침입니다. 지난밤에는 아무도 사라지지 않았습니다.";
   }
-  room.announcement = nightResult;
+  room.phase = "result-night";
+  room.announcement = announcement;
   room.actions.clear();
-  if (!checkWinner(room, nightResult)) beginDay(room);
+  room.resultReady.clear();
 }
 
 function resolveVote(room) {
@@ -298,57 +356,65 @@ function resolveVote(room) {
   const requiredVotes = Math.floor(alive.length / 2) + 1;
   room.actions.clear();
 
-  room.phase = "vote-result";
+  room.phase = "result-day";
   room.resultReady.clear();
   if (leaders.length > 1) {
-    room.voteResult = {
-      eliminated: false,
+    room.dayResult = {
+      status: RESULT_STATUS.NO_ELIMINATION,
       reason: "tie",
       topVotes,
       requiredVotes,
     };
-    room.announcement =
-      "최다 득표가 동률이어서 아무도 추방되지 않았습니다.";
+    room.announcement = "최다 득표가 동률이어서 아무도 추방되지 않았습니다.";
     return;
   }
 
   if (topVotes < requiredVotes) {
-    room.voteResult = {
-      eliminated: false,
+    room.dayResult = {
+      status: RESULT_STATUS.NO_ELIMINATION,
       reason: "no-majority",
       topVotes,
       requiredVotes,
     };
-    room.announcement =
-      "과반수 득표자가 없어 아무도 추방되지 않았습니다.";
+    room.announcement = "과반수 득표자가 없어 아무도 추방되지 않았습니다.";
     return;
   }
 
-  const eliminated = room.players.get(leaders[0]);
-  eliminated.alive = false;
-  room.voteResult = {
-    eliminated: true,
+  const voteTarget = room.players.get(leaders[0]);
+  voteTarget.alive = false;
+  const resultStatus =
+    voteTarget.role === "mafia"
+      ? RESULT_STATUS.MAFIA_CAUGHT
+      : RESULT_STATUS.DAY_EXILE;
+  room.dayResult = {
+    status: resultStatus,
     reason: "majority",
-    playerId: eliminated.id,
-    playerName: eliminated.name,
-    role: eliminated.role,
-    roleName: ROLE_INFO[eliminated.role].name,
+    playerId: voteTarget.id,
+    playerName: voteTarget.name,
+    role: voteTarget.role,
+    roleName: ROLE_INFO[voteTarget.role].name,
     topVotes,
     requiredVotes,
   };
-  room.announcement = `${eliminated.name} 님은 ${roleWas(eliminated.role)}.`;
+  room.announcement =
+    resultStatus === RESULT_STATUS.MAFIA_CAUGHT
+      ? `${voteTarget.name} 님이 투표로 마피아임이 밝혀졌습니다.`
+      : `${voteTarget.name} 님이 투표로 추방되었습니다. 정체는 ${roleWas(voteTarget.role)}.`;
 }
 
 export function createGameService() {
   const rooms = new Map();
 
   function createRoom(hostName, preferredCode = "") {
-    const requestedCode = String(preferredCode || "").trim().toUpperCase();
+    const requestedCode = String(preferredCode || "")
+      .trim()
+      .toUpperCase();
     const code = requestedCode || makeCode(rooms);
     if (!/^[A-Z2-9]{4}$/.test(code) || /[IO10]/.test(code)) {
       throw new GameError("방 코드 형식이 올바르지 않습니다.");
     }
-    if (rooms.has(code)) throw new GameError("이미 사용 중인 방 코드입니다.", 409);
+    if (rooms.has(code))
+      throw new GameError("이미 사용 중인 방 코드입니다.", 409);
     const host = {
       id: makeId(),
       token: makeId(18),
@@ -374,7 +440,8 @@ export function createGameService() {
       resultReady: new Set(),
       investigations: new Map(),
       privateNotices: new Map(),
-      voteResult: null,
+      dayResult: null,
+      nightResult: null,
       joinUrl: "",
       settings: {
         copEnabled: true,
@@ -460,7 +527,8 @@ export function createGameService() {
       room.dayReady.clear();
       room.resultReady.clear();
       room.investigations.clear();
-      room.voteResult = null;
+      room.dayResult = null;
+      room.nightResult = null;
       return;
     }
     if (type === "ready") {
@@ -515,7 +583,9 @@ export function createGameService() {
         throw new GameError("탈락한 참가자는 투표를 준비할 수 없습니다.");
       if (action.ready === false) room.dayReady.delete(player.id);
       else room.dayReady.add(player.id);
-      if (alivePlayers(room).every((current) => room.dayReady.has(current.id))) {
+      if (
+        alivePlayers(room).every((current) => room.dayReady.has(current.id))
+      ) {
         if (room.openingDay) beginNight(room);
         else beginVote(room);
       }
@@ -546,18 +616,34 @@ export function createGameService() {
       resolveVote(room);
       return;
     }
-    if (type === "confirm-vote-result") {
-      if (room.phase !== "vote-result")
+    if (type === "confirm-result-day" || type === "confirm-vote-result") {
+      if (room.phase !== "result-day")
         throw new GameError("지금은 투표 결과를 확인할 수 없습니다.");
       if (!player.alive)
-        throw new GameError("탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.");
+        throw new GameError(
+          "탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.",
+        );
       room.resultReady.add(player.id);
       if (
-        alivePlayers(room).every((current) =>
-          room.resultReady.has(current.id),
-        )
+        alivePlayers(room).every((current) => room.resultReady.has(current.id))
       ) {
         if (!checkWinner(room)) beginNight(room);
+      }
+      return;
+    }
+    if (type === "confirm-result-night") {
+      if (room.phase !== "result-night")
+        throw new GameError("지금은 밤 결과를 확인할 수 없습니다.");
+      if (!player.alive)
+        throw new GameError(
+          "탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.",
+        );
+      room.resultReady.add(player.id);
+      if (
+        alivePlayers(room).every((current) => room.resultReady.has(current.id))
+      ) {
+        const announcement = room.announcement;
+        if (!checkWinner(room, announcement)) beginDay(room, announcement);
       }
       return;
     }
@@ -590,7 +676,8 @@ export function createGameService() {
       room.resultReady.clear();
       room.investigations.clear();
       room.privateNotices.clear();
-      room.voteResult = null;
+      room.dayResult = null;
+      room.nightResult = null;
       for (const current of room.players.values()) {
         current.role = null;
         current.alive = true;
@@ -634,13 +721,20 @@ export function createGameService() {
     }
 
     if (room.phase === "lobby" || room.phase === "ended") return true;
-    if (room.phase === "vote-result") {
+    if (room.phase === "result-day") {
       if (
-        alivePlayers(room).every((current) =>
-          room.resultReady.has(current.id),
-        )
+        alivePlayers(room).every((current) => room.resultReady.has(current.id))
       ) {
         if (!checkWinner(room)) beginNight(room);
+      }
+      return true;
+    }
+    if (room.phase === "result-night") {
+      if (
+        alivePlayers(room).every((current) => room.resultReady.has(current.id))
+      ) {
+        const announcement = room.announcement;
+        if (!checkWinner(room, announcement)) beginDay(room, announcement);
       }
       return true;
     }
@@ -657,7 +751,9 @@ export function createGameService() {
     } else if (room.phase === "night") {
       resolveNight(room);
     } else if (room.phase === "day") {
-      if (alivePlayers(room).every((current) => room.dayReady.has(current.id))) {
+      if (
+        alivePlayers(room).every((current) => room.dayReady.has(current.id))
+      ) {
         if (room.openingDay) beginNight(room);
         else beginVote(room);
       }
@@ -690,9 +786,7 @@ export function createGameService() {
               return {
                 playerName: current.name,
                 targetName: target?.name || "",
-                confirmed: Boolean(
-                  selection && selection.confirmed !== false,
-                ),
+                confirmed: Boolean(selection && selection.confirmed !== false),
                 isSelf: current.id === player.id,
               };
             })
@@ -722,7 +816,8 @@ export function createGameService() {
       openingDay: Boolean(room.openingDay),
       winner: room.winner,
       announcement: room.announcement,
-      voteResult: room.phase === "vote-result" ? room.voteResult : null,
+      dayResult: room.phase === "result-day" ? room.dayResult : null,
+      nightResult: room.phase === "result-night" ? room.nightResult : null,
       joinUrl: room.joinUrl,
       qrDataUrl:
         room.phase === "lobby" && room.joinUrl
@@ -761,7 +856,7 @@ export function createGameService() {
             ? room.dayReady.has(current.id)
             : undefined,
         resultReady:
-          room.phase === "vote-result" && current.alive
+          ["result-day", "result-night"].includes(room.phase) && current.alive
             ? room.resultReady.has(current.id)
             : undefined,
         isHost: current.id === room.hostId,
@@ -779,10 +874,14 @@ export function createGameService() {
           : undefined,
       requiredCount:
         room.phase === "vote" ? alivePlayers(room).length : undefined,
-      resultReadyCount:
-        room.phase === "vote-result" ? room.resultReady.size : undefined,
-      resultReadyRequiredCount:
-        room.phase === "vote-result" ? alivePlayers(room).length : undefined,
+      resultReadyCount: ["result-day", "result-night"].includes(room.phase)
+        ? room.resultReady.size
+        : undefined,
+      resultReadyRequiredCount: ["result-day", "result-night"].includes(
+        room.phase,
+      )
+        ? alivePlayers(room).length
+        : undefined,
     };
   }
 
@@ -824,8 +923,12 @@ export function createGameService() {
     let restored = 0;
     for (const saved of snapshot.rooms) {
       if (!saved?.code || !Array.isArray(saved.players)) continue;
+      const { voteResult: legacyVoteResult, ...savedRoom } = saved;
       rooms.set(saved.code, {
-        ...saved,
+        ...savedRoom,
+        phase: saved.phase === "vote-result" ? "result-day" : saved.phase,
+        dayResult: normalizeDayResult(saved.dayResult || legacyVoteResult),
+        nightResult: normalizeNightResult(saved.nightResult),
         lastActivityAt: Number(
           saved.lastActivityAt || saved.createdAt || Date.now(),
         ),
@@ -833,7 +936,7 @@ export function createGameService() {
         actions: new Map(saved.actions || []),
         dayReady: new Set(saved.dayReady || []),
         resultReady: new Set(saved.resultReady || []),
-        investigations: new Map(saved.investigations || []),
+        investigations: normalizeInvestigations(saved.investigations),
         privateNotices: new Map(saved.privateNotices || []),
       });
       restored += 1;

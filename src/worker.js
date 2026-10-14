@@ -19,7 +19,8 @@ const TEMPLATE_NAMES = [
   "night",
   "day",
   "vote",
-  "vote-result",
+  "result-day",
+  "result-night",
   "ended",
   "header",
   "footer",
@@ -29,6 +30,9 @@ const TEMPLATE_NAMES = [
 ];
 const STATIC_ASSET_PATHS = new Map([
   ["/", "/index.html"],
+  ["/favicon.ico", "/icons/favicon-32.png"],
+  ["/apple-touch-icon.png", "/icons/apple-touch-icon.png"],
+  ["/apple-touch-icon-precomposed.png", "/icons/apple-touch-icon.png"],
   ["/guide.html", "/pages/ko/guide.html"],
   ["/privacy.html", "/pages/ko/privacy.html"],
   ["/roles.html", "/pages/ko/roles.html"],

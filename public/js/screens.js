@@ -4,9 +4,10 @@ const phaseLabels = {
   lobby: "대기실",
   reveal: "역할 확인",
   night: "밤",
+  "result-night": "밤 결과",
   day: "낮",
   vote: "투표",
-  "vote-result": "투표 결과",
+  "result-day": "낮 결과",
   ended: "게임 종료",
 };
 
@@ -34,7 +35,10 @@ export function createScreens({
           status = player.dayReady ? "밤 준비" : "대화 중";
         else status = player.dayReady ? "투표 준비" : "토론 중";
       }
-      if (state().phase === "vote-result" && player.alive)
+      if (
+        ["result-day", "result-night"].includes(state().phase) &&
+        player.alive
+      )
         status = player.resultReady ? "결과 확인 완료" : "결과 확인 중";
       const el = view("player", {
         name: player.name,
@@ -70,13 +74,13 @@ export function createScreens({
       return el;
     });
   }
+
   function targets(type, verb) {
     return state().targets.map((target) => {
       const el = view("target", {
         initial: target.name.slice(0, 1),
         name: target.name,
-        verb:
-          state().you.selectedTargetId === target.id ? "현재 선택" : verb,
+        verb: state().you.selectedTargetId === target.id ? "현재 선택" : verb,
       });
       el.dataset.action = type;
       el.dataset.id = target.id;
@@ -158,7 +162,8 @@ export function createScreens({
     const qrUrl = new URL(s.qrDataUrl, location.origin);
     qrUrl.searchParams.set("lang", locale);
 
-    el.querySelector('[data-attr-src="qrDataUrl"]').src = `${qrUrl.pathname}${qrUrl.search}`;
+    el.querySelector('[data-attr-src="qrDataUrl"]').src =
+      `${qrUrl.pathname}${qrUrl.search}`;
 
     el.querySelector("#invite-link").value = inviteUrl.href;
 
@@ -221,6 +226,7 @@ export function createScreens({
     slot(el, "players", players());
     return el;
   }
+
   function renderWaiting(
     title,
     description,
@@ -239,6 +245,7 @@ export function createScreens({
     visible(el, "alerts", !!announcement || !!investigation);
     return el;
   }
+
   function renderNight() {
     const s = state();
     if (!s.you.alive)
@@ -270,7 +277,7 @@ export function createScreens({
       );
     const role = s.you.role,
       names = { mafia: "마피아", cop: "경찰", doctor: "의사" },
-      verbs = { mafia: "제거", cop: "조사", doctor: "보호" };
+      verbs = { mafia: "공격", cop: "조사", doctor: "보호" };
     const investigation = s.you.investigation;
     const el = view("night", {
       eyebrow: `${s.round}번째 밤 · ${names[role]}`,
@@ -309,6 +316,7 @@ export function createScreens({
     slot(el, "targets", targets("night-select", verbs[role]));
     return el;
   }
+
   function renderDay() {
     const s = state();
     const investigation = s.you.investigation;
@@ -347,6 +355,7 @@ export function createScreens({
     slot(el, "players", players());
     return el;
   }
+
   function renderVote() {
     const s = state();
     if (!s.you.alive)
@@ -368,47 +377,227 @@ export function createScreens({
     slot(el, "targets", targets("vote-select", "선택"));
     return el;
   }
-  function renderVoteResult() {
+
+  function setResultAppearance(
+    el,
+    { status: resultStatus, role, reason },
+  ) {
+    const status = el.querySelector('[data-text="outcome"]');
+    el.dataset.resultIcon = resultStatus;
+
+    el.classList.toggle(
+      "case-danger",
+      resultStatus === "day-exile" || resultStatus === "night-victim",
+    );
+    el.classList.toggle("case-success", resultStatus === "mafia-caught");
+    el.classList.toggle("case-neutral", resultStatus === "no-elimination");
+    el.classList.toggle("case-safe", resultStatus === "safe");
+
+    const roleLabels =
+      locale === "en"
+        ? {
+            citizen: "Citizen",
+            cop: "Detective",
+            doctor: "Doctor",
+            mafia: "Mafia",
+          }
+        : { citizen: "시민", cop: "경찰", doctor: "의사", mafia: "마피아" };
+    let heading;
+    if (resultStatus === "mafia-caught")
+      heading = locale === "en" ? "Mafia identified" : "마피아 색출";
+    else if (resultStatus === "day-exile")
+      heading =
+        locale === "en"
+          ? `${roleLabels[role] || "Player"} exiled`
+          : `${roleLabels[role] || "참가자"} 추방`;
+    else if (resultStatus === "no-elimination")
+      heading =
+        reason === "tie"
+          ? locale === "en"
+            ? "Tie · No exile"
+            : "동률 · 추방 없음"
+          : locale === "en"
+            ? "No majority"
+            : "과반수 미달";
+    else if (resultStatus === "night-victim")
+      heading =
+        locale === "en"
+          ? `${roleLabels[role] || "Player"} victim`
+          : `${roleLabels[role] || "참가자"} 희생`;
+    else heading = locale === "en" ? "All safe" : "전원 무사";
+    if (status) status.textContent = heading;
+  }
+
+  function renderDayResult() {
     const s = state();
-    const result = s.voteResult;
-    const eliminated = result.eliminated !== false && !!result.role;
-    const progress = `${s.resultReadyCount}/${s.resultReadyRequiredCount}명이 결과를 확인했습니다.`;
-    const title = eliminated
-      ? `${result.playerName} 님은 ${roleWas(result.roleName)}.`
-      : "아무도 추방되지 않았습니다.";
+    const result = s.dayResult;
+    const resultStatus = result.status;
+    const hasDayResult = ["day-exile", "mafia-caught"].includes(resultStatus);
+    const localizedRole =
+      locale === "en"
+        ? {
+            mafia: "Mafia",
+            cop: "Detective",
+            doctor: "Doctor",
+            citizen: "Citizen",
+          }[result.role]
+        : result.roleName;
+    const progress =
+      locale === "en"
+        ? `${s.resultReadyCount}/${s.resultReadyRequiredCount} players reviewed the result.`
+        : `${s.resultReadyCount}/${s.resultReadyRequiredCount}명이 결과를 확인했습니다.`;
+    const title = hasDayResult
+      ? resultStatus === "mafia-caught"
+        ? locale === "en"
+          ? `${result.playerName} was Mafia.`
+          : `${result.playerName} 님은 마피아였습니다.`
+        : locale === "en"
+          ? `${result.playerName} was exiled.`
+          : `${result.playerName} 님이 추방되었습니다.`
+      : locale === "en"
+        ? "No one was exiled."
+        : "아무도 추방되지 않았습니다.";
     const reason =
       result.reason === "tie"
-        ? "최다 득표가 동률입니다."
-        : eliminated
-          ? `${result.topVotes}표를 받아 과반수를 넘었습니다.`
-          : "과반수 득표자가 없습니다.";
-    const tally = `최다 득표 ${result.topVotes}표 · 추방 기준 ${result.requiredVotes}표`;
-    const el = view("vote-result", {
+        ? locale === "en"
+          ? "The top vote was tied."
+          : "최다 득표가 동률입니다."
+        : hasDayResult && resultStatus !== "mafia-caught"
+          ? locale === "en"
+            ? `They were ${localizedRole}. ${result.topVotes} votes reached the majority.`
+            : `정체는 ${roleWas(localizedRole)}. ${result.topVotes}표를 받아 과반수를 넘었습니다.`
+          : hasDayResult
+            ? locale === "en"
+              ? `${result.topVotes} votes reached the majority.`
+              : `${result.topVotes}표를 받아 과반수를 넘었습니다.`
+          : locale === "en"
+            ? "No player received a majority."
+            : "과반수 득표자가 없습니다.";
+    const tally =
+      locale === "en"
+        ? `Top vote ${result.topVotes} · Majority ${result.requiredVotes}`
+        : `최다 득표 ${result.topVotes}표 · 추방 기준 ${result.requiredVotes}표`;
+    const el = view("result-day", {
+      stamp: hasDayResult
+        ? locale === "en"
+          ? "VERDICT"
+          : "판결 확정"
+        : locale === "en"
+          ? "ON HOLD"
+          : "판결 보류",
+      record:
+        locale === "en"
+          ? `── TRIAL RECORD / DAY ${String(s.round).padStart(2, "0")} ──`
+          : `── 재판 기록 / DAY ${String(s.round).padStart(2, "0")} ──`,
+      outcome: "",
       title,
       reason,
       tally,
-      action: s.you.resultReady ? "결과 확인 완료" : "결과 확인",
+      action:
+        locale === "en"
+          ? s.you.resultReady
+            ? "Result confirmed"
+            : "Confirm result"
+          : s.you.resultReady
+            ? "결과 확인 완료"
+            : "결과 확인",
       progress,
     });
-    visible(el, "eliminated", eliminated);
-    if (eliminated) {
-      el.classList.add(`role-${result.role}`);
-      const icon = document.createElement("span");
-      icon.className = "role-svg";
-      icon.style.setProperty(
-        "--icon-url",
-        `url('/icons/game/${ROLE_ICONS[result.role]}')`,
-      );
-      icon.setAttribute("aria-hidden", "true");
-      slot(el, "icon", icon);
-    }
+
+    setResultAppearance(el, {
+      status: resultStatus,
+      role: hasDayResult ? result.role : null,
+      reason: result.reason,
+    });
     visible(el, "alive", s.you.alive);
     visible(el, "dead", !s.you.alive);
-    const button = el.querySelector("#confirm-vote-result");
+    const button = el.querySelector("#confirm-result-day");
     if (button) button.disabled = s.you.resultReady;
     slot(el, "players", players());
     return el;
   }
+
+  function renderNightResult() {
+    const s = state();
+    const result = s.nightResult;
+    const resultStatus = result.status;
+    const hasVictim = resultStatus === "night-victim";
+    const localizedRole =
+      locale === "en"
+        ? {
+            mafia: "Mafia",
+            cop: "Detective",
+            doctor: "Doctor",
+            citizen: "Citizen",
+          }[result.role]
+        : result.roleName;
+    const progress =
+      locale === "en"
+        ? `${s.resultReadyCount}/${s.resultReadyRequiredCount} players reviewed the result.`
+        : `${s.resultReadyCount}/${s.resultReadyRequiredCount}명이 결과를 확인했습니다.`;
+    const investigation =
+      s.you.role === "cop" && s.you.investigation
+        ? `${s.you.investigation.targetName} · ${
+            locale === "en"
+              ? s.you.investigation.isMafia
+                ? "Mafia"
+                : "Not Mafia"
+              : s.you.investigation.isMafia
+                ? "마피아"
+                : "마피아 아님"
+          }`
+        : "";
+    const el = view("result-night", {
+      record:
+        locale === "en"
+          ? `── CASE RECORD / NIGHT ${String(s.round).padStart(2, "0")} ──`
+          : `── 사건 기록 / NIGHT ${String(s.round).padStart(2, "0")} ──`,
+      outcome: "",
+      stamp: hasVictim
+        ? locale === "en"
+          ? "INCIDENT"
+          : "사건 발생"
+        : locale === "en"
+          ? "ALL SAFE"
+          : "사건 없음",
+      title: hasVictim
+        ? locale === "en"
+          ? `${result.playerName} was the night's victim.`
+          : `${result.playerName} 님이 밤사이 희생되었습니다.`
+        : locale === "en"
+          ? "No one disappeared."
+          : "아무도 사라지지 않았습니다.",
+      description: hasVictim
+        ? locale === "en"
+          ? `They were ${localizedRole}.`
+          : `정체는 ${roleWas(localizedRole)}.`
+        : locale === "en"
+          ? "A peaceful night passed."
+          : "평온한 밤이 지나갔습니다.",
+      investigation,
+      action:
+        locale === "en"
+          ? s.you.resultReady
+            ? "Result confirmed"
+            : "Confirm result"
+          : s.you.resultReady
+            ? "결과 확인 완료"
+            : "결과 확인",
+      progress,
+    });
+    visible(el, "investigation", !!investigation);
+    setResultAppearance(el, {
+      status: resultStatus,
+      role: hasVictim ? result.role : null,
+    });
+    visible(el, "alive", s.you.alive);
+    visible(el, "dead", !s.you.alive);
+    const button = el.querySelector("#confirm-result-night");
+    if (button) button.disabled = s.you.resultReady;
+    slot(el, "players", players());
+    return el;
+  }
+
   function renderEnded() {
     const s = state(),
       mafia = s.winner === "mafia";
@@ -429,7 +618,8 @@ export function createScreens({
     renderNight,
     renderDay,
     renderVote,
-    renderVoteResult,
+    renderDayResult,
+    renderNightResult,
     renderEnded,
   };
 }
