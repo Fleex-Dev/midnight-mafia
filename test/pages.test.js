@@ -142,12 +142,13 @@ test("the application keeps localization and responsive styles wired", async () 
 });
 
 test("search metadata, sitemap, verification, and private room indexing rules are present", async () => {
-  const [index, robots, sitemap, verification, worker] = await Promise.all([
+  const [index, robots, sitemap, verification, worker, templates] = await Promise.all([
     read("public/index.html"),
     read("public/robots.txt"),
     read("public/sitemap.xml"),
     read("public/googlee55a4c2f1506c8a3.html"),
     read("src/worker.js"),
+    read("public/js/templates.js"),
   ]);
   assert.match(
     index,
@@ -197,6 +198,8 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   );
   assert.match(robots, /Disallow: \/api\//);
   assert.doesNotMatch(robots, /Disallow: \/templates(?:\/|\.json)/);
+  assert.match(templates, /fetch\("\/app-templates\.json"\)/);
+  assert.match(worker, /"\/app-templates\.json", "\/templates\.json"/);
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
   assert.match(
     sitemap,

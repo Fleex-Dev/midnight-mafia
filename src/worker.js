@@ -700,7 +700,10 @@ export default {
       if (request.method === "GET" && url.pathname === "/healthz") {
         return json(200, { ok: true, platform: "cloudflare" });
       }
-      if (request.method === "GET" && url.pathname === "/templates.json") {
+      if (
+        request.method === "GET" &&
+        ["/app-templates.json", "/templates.json"].includes(url.pathname)
+      ) {
         return templatesResponse(request, env);
       }
       const socialImageMatch = url.pathname.match(

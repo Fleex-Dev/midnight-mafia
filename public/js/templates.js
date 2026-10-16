@@ -20,8 +20,11 @@ const NAMES = [
 ];
 const cache = new Map();
 export async function loadTemplates() {
-  const response = await fetch("/templates.json");
-  if (!response.ok) throw new Error("화면 템플릿을 불러오지 못했습니다.");
+  const response = await fetch("/app-templates.json");
+  if (!response.ok)
+    throw new Error(
+      `화면 템플릿을 불러오지 못했습니다. (${response.status})`,
+    );
   const sources = await response.json();
   for (const name of NAMES) {
     if (typeof sources[name] !== "string")
