@@ -196,6 +196,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     /Sitemap: https:\/\/midnight-mafia\.fleex\.app\/sitemap\.xml/,
   );
   assert.match(robots, /Disallow: \/api\//);
+  assert.doesNotMatch(robots, /Disallow: \/templates(?:\/|\.json)/);
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
   assert.match(
     sitemap,

@@ -1,7 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /templates/
-Disallow: /templates.json
 
 Sitemap: https://midnight-mafia.fleex.app/sitemap.xml
