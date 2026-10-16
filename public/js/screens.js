@@ -1,4 +1,4 @@
-import { ROLE_ICONS } from "./role-icons.js";
+import { ROLE_ICONS, createRoleIcon } from "./role-icons.js";
 import { view, visible, slot } from "./templates.js";
 const phaseLabels = {
   lobby: "대기실",
@@ -380,7 +380,7 @@ export function createScreens({
 
   function setResultAppearance(
     el,
-    { status: resultStatus, role, reason },
+    { status: resultStatus, role },
   ) {
     const status = el.querySelector('[data-text="outcome"]');
     el.dataset.resultIcon = resultStatus;
@@ -390,7 +390,10 @@ export function createScreens({
       resultStatus === "day-exile" || resultStatus === "night-victim",
     );
     el.classList.toggle("case-success", resultStatus === "mafia-caught");
-    el.classList.toggle("case-neutral", resultStatus === "no-elimination");
+    el.classList.toggle(
+      "case-neutral",
+      resultStatus === "vote-tie" || resultStatus === "no-majority",
+    );
     el.classList.toggle("case-safe", resultStatus === "safe");
 
     const roleLabels =
@@ -410,15 +413,10 @@ export function createScreens({
         locale === "en"
           ? `${roleLabels[role] || "Player"} exiled`
           : `${roleLabels[role] || "참가자"} 추방`;
-    else if (resultStatus === "no-elimination")
-      heading =
-        reason === "tie"
-          ? locale === "en"
-            ? "Tie · No exile"
-            : "동률 · 추방 없음"
-          : locale === "en"
-            ? "No majority"
-            : "과반수 미달";
+    else if (resultStatus === "vote-tie")
+      heading = locale === "en" ? "Tie · No exile" : "동률 · 추방 없음";
+    else if (resultStatus === "no-majority")
+      heading = locale === "en" ? "No majority" : "과반수 미달";
     else if (resultStatus === "night-victim")
       heading =
         locale === "en"
@@ -507,7 +505,6 @@ export function createScreens({
     setResultAppearance(el, {
       status: resultStatus,
       role: hasDayResult ? result.role : null,
-      reason: result.reason,
     });
     visible(el, "alive", s.you.alive);
     visible(el, "dead", !s.you.alive);
@@ -598,18 +595,238 @@ export function createScreens({
     return el;
   }
 
+  function endMetricLabel(key) {
+    const labels =
+      locale === "en"
+        ? {
+            "investigation-success": "Investigation success",
+            "attack-prevention": "Attack prevention",
+            "rescue-maintained": "Rescue maintained",
+            "mafia-vote-hit": "Mafia vote accuracy",
+            "mafia-exile-contribution": "Mafia exile contribution",
+            "night-attack-success": "Night attack success",
+            "citizen-exile-contribution": "Citizen exile contribution",
+            survival: "Survival",
+            "team-win": "Team victory",
+          }
+        : {
+            "investigation-success": "조사 성공",
+            "attack-prevention": "공격 방어 성공",
+            "rescue-maintained": "구조 효과 유지",
+            "mafia-vote-hit": "마피아 투표 적중",
+            "mafia-exile-contribution": "마피아 색출 기여",
+            "night-attack-success": "밤 공격 성공",
+            "citizen-exile-contribution": "시민 팀 추방 기여",
+            survival: "생존",
+            "team-win": "팀 승리",
+          };
+    return labels[key] || key;
+  }
+
+  function endRoleLabel(role) {
+    return locale === "en"
+      ? {
+          mafia: "Mafia",
+          cop: "Detective",
+          doctor: "Doctor",
+          citizen: "Citizen",
+        }[role]
+      : roleName(role);
+  }
+
+  function makeEndRoleIcon(role) {
+    const box = document.createElement("span");
+    box.className = `end-role-icon role-${role}`;
+    box.append(createRoleIcon(role));
+    return box;
+  }
+
+  function makeEndMetric(metric, label = endMetricLabel(metric.key)) {
+    const row = document.createElement("div");
+    row.className = "end-metric-row";
+    const name = document.createElement("span");
+    name.textContent = label;
+    const track = document.createElement("span");
+    track.className = "end-metric-track";
+    const fill = document.createElement("i");
+    fill.style.width = `${Math.min(100, (metric.score / metric.max) * 100)}%`;
+    track.append(fill);
+    const score = document.createElement("b");
+    score.textContent = metric.score.toFixed(1);
+    row.append(name, track, score);
+    return row;
+  }
+
+  function endMetricDetail(metric) {
+    if (metric.key === "team-win")
+      return metric.earned
+        ? locale === "en"
+          ? "Team victory"
+          : "팀 승리"
+        : "";
+    if (!metric.possible) return "";
+    const unit = metric.key === "survival" ? "R" : "";
+    return `${endMetricLabel(metric.key)} ${metric.earned}${unit}/${metric.possible}${unit}`;
+  }
+
+  function makeEndRankingRow(player, index, mvpIds) {
+    const row = document.createElement("div");
+    row.className = "end-ranking-row";
+
+    const rank = document.createElement("span");
+    rank.className = "end-rank";
+    rank.textContent = String(index + 1).padStart(2, "0");
+
+    const identity = document.createElement("div");
+    identity.className = "end-player-identity";
+    identity.append(makeEndRoleIcon(player.role));
+    const identityCopy = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = player.name;
+    name.setAttribute("translate", "no");
+    identityCopy.append(name);
+    if (mvpIds.includes(player.id)) {
+      const badge = document.createElement("em");
+      badge.textContent = "MVP";
+      identityCopy.append(badge);
+    }
+    const role = document.createElement("small");
+    role.textContent = endRoleLabel(player.role);
+    identityCopy.append(role);
+    identity.append(identityCopy);
+
+    const reasons = player.metrics
+      .filter((metric) => metric.score > 0 && metric.key !== "team-win")
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 2)
+      .map(endMetricDetail)
+      .filter(Boolean);
+    const reason = document.createElement("span");
+    reason.className = "end-player-reason";
+    reason.textContent = reasons.join(" · ") || (locale === "en" ? "No recorded score" : "기록된 점수 없음");
+
+    const score = document.createElement("strong");
+    score.className = "end-player-score";
+    score.textContent = player.score.toFixed(1);
+    row.append(rank, identity, reason, score);
+    return row;
+  }
+
+  function endScoreRules() {
+    const rules =
+      locale === "en"
+        ? [
+            ["Detective", "Investigation 45 · Mafia vote 10 · Identification 15 · Survival 15 · Victory 15"],
+            ["Doctor", "Defense 25 · Rescue maintained 10 · Mafia vote 20 · Identification 15 · Survival 15 · Victory 15"],
+            ["Citizen", "Mafia vote 45 · Identification 25 · Survival 15 · Victory 15"],
+            ["Mafia", "Night attack 45 · Citizen exile 25 · Survival 15 · Victory 15"],
+          ]
+        : [
+            ["경찰", "조사 성공 45 · 마피아 투표 10 · 색출 기여 15 · 생존 15 · 승리 15"],
+            ["의사", "공격 방어 25 · 구조 유지 10 · 마피아 투표 20 · 색출 기여 15 · 생존 15 · 승리 15"],
+            ["시민", "마피아 투표 45 · 색출 기여 25 · 생존 15 · 승리 15"],
+            ["마피아", "밤 공격 45 · 시민 팀 추방 25 · 생존 15 · 승리 15"],
+          ];
+    return rules.map(([role, description]) => {
+      const row = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = role;
+      const copy = document.createElement("span");
+      copy.textContent = description;
+      row.append(name, copy);
+      return row;
+    });
+  }
+
   function renderEnded() {
-    const s = state(),
-      mafia = s.winner === "mafia";
+    const s = state();
+    const mafia = s.winner === "mafia";
+    const analysis = s.analysis;
+    const mvpPlayers = analysis.players.filter((player) =>
+      analysis.mvpIds.includes(player.id),
+    );
+    const leadMvp = mvpPlayers[0];
     const el = view("ended", {
-      symbol: mafia ? "◆" : "●",
-      title: mafia ? "마피아 승리" : "시민 팀 승리",
-      announcement: s.announcement,
+      record: `GAME RESULT / ${String(s.round).padStart(2, "0")}`,
+      title:
+        locale === "en"
+          ? mafia
+            ? "The Mafia won."
+            : "The Citizens won."
+          : mafia
+            ? "마피아 팀이 승리했습니다."
+            : "시민 팀이 승리했습니다.",
+      announcement:
+        locale === "en"
+          ? mafia
+            ? "The Mafia took control. Review the choices that decided the game."
+            : "Every Mafia member was found. Review the choices that decided the game."
+          : mafia
+            ? "마피아가 마을을 장악했습니다. 이번 게임의 결정적 활약을 확인하세요."
+            : "모든 마피아를 찾아냈습니다. 이번 게임의 결정적 활약을 확인하세요.",
+      meta:
+        locale === "en"
+          ? `${analysis.participantCount} PLAYERS · ${analysis.rounds} ROUNDS`
+          : `${analysis.participantCount}명 · ${analysis.rounds}라운드`,
+      mvpLabel:
+        locale === "en"
+          ? mvpPlayers.length > 1
+            ? "PLAYERS OF THE CASE"
+            : "PLAYER OF THE CASE"
+          : mvpPlayers.length > 1
+            ? "공동 최고의 플레이어"
+            : "최고의 플레이어",
+      mvpNames: mvpPlayers.map((player) => player.name).join(" · "),
+      mvpRoles: mvpPlayers.map((player) => endRoleLabel(player.role)).join(" · "),
+      mvpScore: leadMvp?.score.toFixed(1) || "0.0",
+      scoreLabel: locale === "en" ? "Performance score" : "활약 점수",
+      rounds: analysis.rounds,
+      participants: analysis.participantCount,
+      dayExiles: analysis.dayExiles,
+      nightVictims: analysis.nightVictims,
     });
     el.classList.add(mafia ? "mafia-wins" : "citizen-wins");
     visible(el, "host", s.you.isHost);
     visible(el, "guest", !s.you.isHost);
-    slot(el, "players", players(true));
+    slot(el, "mvpIcons", mvpPlayers.map((player) => makeEndRoleIcon(player.role)));
+    slot(
+      el,
+      "mvpMetrics",
+      mvpPlayers.length === 1
+        ? leadMvp.metrics.map((metric) => makeEndMetric(metric))
+        : mvpPlayers.map((player) =>
+            makeEndMetric(
+              { score: player.score, max: 100 },
+              player.name,
+            ),
+          ),
+    );
+    slot(
+      el,
+      "ranking",
+      analysis.players.map((player, index) =>
+        makeEndRankingRow(player, index, analysis.mvpIds),
+      ),
+    );
+    slot(el, "rules", endScoreRules());
+
+    if (locale === "en") {
+      el.querySelector('[aria-label="게임 주요 수치"]')?.setAttribute(
+        "aria-label",
+        "Game summary",
+      );
+      const labels = el.querySelectorAll(".end-summary > div > span");
+      ["Rounds played", "Players", "Day exiles", "Night victims"].forEach(
+        (label, index) => {
+          if (labels[index]) labels[index].textContent = label;
+        },
+      );
+      el.querySelector("#ranking-title").textContent = "Player performance";
+      el.querySelector(".end-ranking > header span").textContent =
+        "Based only on choices and results recorded by the app";
+      el.querySelector(".end-score-note").textContent =
+        "Performance scores are calculated only from choices and results recorded in the app. Conversations and social play during the game are not reflected.";
+    }
     return el;
   }
   return {

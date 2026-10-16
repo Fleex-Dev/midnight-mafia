@@ -443,7 +443,7 @@ test("the Detective sees the private result immediately and keeps it the next mo
   assert.equal(service.getState(room, citizen).you.investigation, undefined);
 });
 
-test("a tie or a top vote below the majority produces no elimination", () => {
+test("a tie and a top vote below the majority produce distinct results", () => {
   function prepareVote() {
     const service = createGameService();
     const { room, players, host } = addPlayers(service, 6);
@@ -467,7 +467,7 @@ test("a tie or a top vote below the majority produces no elimination", () => {
     castVote(tied.service, tied.room, player, target);
 
   assert.equal(tied.room.phase, "result-day");
-  assert.equal(tied.room.dayResult.status, "no-elimination");
+  assert.equal(tied.room.dayResult.status, "vote-tie");
   assert.equal(tied.room.dayResult.reason, "tie");
   assert.equal(tied.room.dayResult.topVotes, 2);
   assert.equal(tied.room.dayResult.requiredVotes, 3);
@@ -490,7 +490,7 @@ test("a tie or a top vote below the majority produces no elimination", () => {
     castVote(belowMajority.service, belowMajority.room, player, target);
 
   assert.equal(belowMajority.room.phase, "result-day");
-  assert.equal(belowMajority.room.dayResult.status, "no-elimination");
+  assert.equal(belowMajority.room.dayResult.status, "no-majority");
   assert.equal(belowMajority.room.dayResult.reason, "no-majority");
   assert.equal(belowMajority.room.dayResult.topVotes, 2);
   assert.equal(belowMajority.room.dayResult.requiredVotes, 3);
@@ -711,7 +711,7 @@ test("legacy result snapshots migrate to canonical statuses", () => {
   assert.equal(restored.importSnapshot(snapshot), 1);
   const restoredRoom = restored.rooms.get(room.code);
   assert.equal(restoredRoom.phase, "result-day");
-  assert.equal(restoredRoom.dayResult.status, "no-elimination");
+  assert.equal(restoredRoom.dayResult.status, "vote-tie");
   assert.equal(restoredRoom.dayResult.reason, "tie");
   assert.equal(restoredRoom.nightResult.status, "night-victim");
   assert.equal(
@@ -742,6 +742,76 @@ test("lobby state uses a lightweight QR endpoint", () => {
 
   room.phase = "reveal";
   assert.equal(service.getState(room, player).qrDataUrl, "");
+});
+
+test("final analysis scores recorded actions and selects MVPs from the winning team", () => {
+  const service = createGameService();
+  const { room, players } = addPlayers(service, 4);
+  const [cop, doctor, citizen, mafia] = players;
+  Object.assign(cop, { role: "cop", alive: true });
+  Object.assign(doctor, { role: "doctor", alive: true });
+  Object.assign(citizen, { role: "citizen", alive: true });
+  Object.assign(mafia, { role: "mafia", alive: false });
+
+  room.phase = "ended";
+  room.round = 2;
+  room.winner = "citizen";
+  room.gameHistory = {
+    initialMafiaCount: 1,
+    participants: Object.fromEntries(
+      players.map((player) => [
+        player.id,
+        { id: player.id, name: player.name, role: player.role },
+      ]),
+    ),
+    nights: [
+      {
+        round: 1,
+        mafiaIds: [mafia.id],
+        attackTargetId: citizen.id,
+        victimId: null,
+        doctorId: doctor.id,
+        protectedId: citizen.id,
+        investigation: { playerId: cop.id, targetId: mafia.id },
+      },
+    ],
+    days: [
+      {
+        round: 2,
+        exiledId: mafia.id,
+        votes: [
+          { voterId: cop.id, targetId: mafia.id },
+          { voterId: doctor.id, targetId: mafia.id },
+          { voterId: citizen.id, targetId: mafia.id },
+          { voterId: mafia.id, targetId: citizen.id },
+        ],
+      },
+    ],
+  };
+
+  const state = service.getState(room, cop);
+  assert.equal(state.analysis.rounds, 2);
+  assert.equal(state.analysis.dayExiles, 1);
+  assert.equal(state.analysis.nightVictims, 0);
+  assert.equal(state.analysis.players.length, 4);
+  assert.deepEqual(new Set(state.analysis.mvpIds), new Set([
+    cop.id,
+    doctor.id,
+    citizen.id,
+  ]));
+  assert.equal(
+    state.analysis.players.find((player) => player.id === cop.id).score,
+    100,
+  );
+  assert.equal(
+    state.analysis.players.find((player) => player.id === doctor.id).score,
+    100,
+  );
+  assert.equal(
+    state.analysis.players.find((player) => player.id === citizen.id).score,
+    100,
+  );
+  assert.equal(state.analysis.mvpIds.includes(mafia.id), false);
 });
 
 test("leaving removes actions that targeted the departing player", () => {

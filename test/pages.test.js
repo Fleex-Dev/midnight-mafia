@@ -42,7 +42,8 @@ test("all application templates and game icons exist", async () => {
       "day-exile.svg",
       "night-victim.svg",
       "mafia-caught.svg",
-      "no-elimination.svg",
+      "vote-tie.svg",
+      "no-majority.svg",
       "safe.svg",
       "investigation.svg",
     ].map((name) => access(join(root, "public", "icons", "results", name))),
@@ -134,6 +135,10 @@ test("the application keeps localization and responsive styles wired", async () 
   assert.match(app, /window\.addEventListener\("pageshow", resumeConnection\)/);
   assert.match(app, /window\.addEventListener\("online", resumeConnection\)/);
   assert.match(styles, /@media \(max-width: 600px\)/);
+  assert.match(styles, /--eyebrow-gap: 0\.75rem/);
+  assert.match(styles, /margin: 0 0 var\(--eyebrow-gap\)/);
+  assert.doesNotMatch(styles, /\.phase-panel > \.eyebrow/);
+  assert.doesNotMatch(styles, /\.article-panel > header \.eyebrow/);
 });
 
 test("search metadata, sitemap, verification, and private room indexing rules are present", async () => {
@@ -308,7 +313,8 @@ test("phase UI includes confirmation flows, Mafia coordination, and result scene
     "investigation",
     "mafia-caught",
     "night-victim",
-    "no-elimination",
+    "vote-tie",
+    "no-majority",
     "safe",
   ]) {
     assert.match(`${screens}\n${preview}\n${i18n}`, new RegExp(status));
@@ -328,6 +334,36 @@ test("phase UI includes confirmation flows, Mafia coordination, and result scene
   assert.match(styles, /\[data-result-icon="day-exile"\]/);
   assert.match(styles, /\[data-result-icon="night-victim"\]/);
   assert.match(styles, /\[data-result-icon="mafia-caught"\]/);
+  assert.match(styles, /\[data-result-icon="vote-tie"\]/);
+  assert.match(styles, /\[data-result-icon="no-majority"\]/);
   assert.match(styles, /\.case-record__status-icon/);
+  assert.match(
+    styles,
+    /\.case-shutter__slat\s*\{[\s\S]*rgba\(184, 154, 102, 0\.68\)/,
+  );
+  assert.doesNotMatch(styles, /\.result-night-panel \.case-shutter__slat/);
   assert.doesNotMatch(styles, /\.result-stage/);
+});
+
+test("the final screen renders the performance report and scoring criteria", async () => {
+  const [ended, screens, styles, preview] = await Promise.all([
+    read("public/templates/ended.html"),
+    read("public/js/screens.js"),
+    read("public/css/style.css"),
+    read("public/result-preview.js"),
+  ]);
+  assert.match(ended, /data-slot="mvpMetrics"/);
+  assert.match(ended, /data-slot="ranking"/);
+  assert.match(ended, /data-slot="rules"/);
+  assert.match(ended, /같은 멤버로 다시 하기/);
+  assert.match(ended, /게임 중 나눈 대화와 심리전은 반영되지 않습니다/);
+  assert.match(screens, /investigation-success/);
+  assert.match(screens, /night-attack-success/);
+  assert.match(screens, /createRoleIcon/);
+  assert.match(styles, /\.end-report-grid/);
+  assert.match(styles, /\.end-ranking-row/);
+  assert.match(styles, /@media \(max-width: 760px\)/);
+  assert.match(preview, /end-citizen/);
+  assert.match(preview, /end-mafia/);
+  assert.match(preview, /screens\.renderEnded\(\)/);
 });

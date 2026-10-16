@@ -175,6 +175,16 @@ const EN = {
   "마피아 승리": "Mafia wins",
   "시민 팀 승리": "Citizens win",
   "모두의 정체": "All roles",
+  "진행 라운드": "Rounds played",
+  참가자: "Players",
+  "낮 추방": "Day exiles",
+  "밤 희생": "Night victims",
+  "참가자 활약": "Player performance",
+  "점수 기준": "Scoring criteria",
+  "앱에 기록된 선택과 결과만 반영":
+    "Based only on choices and results recorded by the app",
+  "활약 점수는 앱에 기록된 선택과 결과만으로 계산되며, 게임 중 나눈 대화와 심리전은 반영되지 않습니다.":
+    "Performance scores are calculated only from choices and results recorded in the app. Conversations and social play during the game are not reflected.",
   "같은 멤버로 다시 하기": "Play again with this group",
   "방장이 새 게임을 열 수 있습니다.": "The host can start a new game.",
   "게임에서 나가기": "Leave game",

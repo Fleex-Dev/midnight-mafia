@@ -33,7 +33,8 @@ export const RESULT_STATUS = Object.freeze({
   INVESTIGATION: "investigation",
   MAFIA_CAUGHT: "mafia-caught",
   NIGHT_VICTIM: "night-victim",
-  NO_ELIMINATION: "no-elimination",
+  VOTE_TIE: "vote-tie",
+  NO_MAJORITY: "no-majority",
   SAFE: "safe",
 });
 
@@ -114,6 +115,295 @@ function roleDeck(count, settings) {
   if (summary.doctor) roles.push("doctor");
   while (roles.length < count) roles.push("citizen");
   return shuffle(roles);
+}
+
+function emptyGameHistory() {
+  return {
+    initialMafiaCount: 0,
+    participants: {},
+    nights: [],
+    days: [],
+  };
+}
+
+function beginGameHistory(room) {
+  room.gameHistory = {
+    initialMafiaCount: [...room.players.values()].filter(
+      (player) => player.role === "mafia",
+    ).length,
+    participants: Object.fromEntries(
+      [...room.players.values()].map((player) => [
+        player.id,
+        { id: player.id, name: player.name, role: player.role },
+      ]),
+    ),
+    nights: [],
+    days: [],
+  };
+}
+
+function normalizedGameHistory(history) {
+  return {
+    ...emptyGameHistory(),
+    ...(history || {}),
+    participants: { ...(history?.participants || {}) },
+    nights: Array.isArray(history?.nights) ? history.nights : [],
+    days: Array.isArray(history?.days) ? history.days : [],
+  };
+}
+
+function boundedScore(maximum, earned, possible) {
+  if (!Number.isFinite(possible) || possible <= 0) return 0;
+  const score = maximum * (earned / possible);
+  return Math.round(Math.min(maximum, Math.max(0, score)) * 10) / 10;
+}
+
+function roleTeam(role) {
+  return role === "mafia" ? "mafia" : "citizen";
+}
+
+function buildFinalAnalysis(room) {
+  const history = normalizedGameHistory(room.gameHistory);
+  if (!Object.keys(history.participants).length) {
+    history.participants = Object.fromEntries(
+      [...room.players.values()].map((player) => [
+        player.id,
+        { id: player.id, name: player.name, role: player.role },
+      ]),
+    );
+  }
+  if (!history.initialMafiaCount) {
+    history.initialMafiaCount = Object.values(history.participants).filter(
+      (player) => player.role === "mafia",
+    ).length;
+  }
+  const participants = Object.values(history.participants);
+  const roleOf = (playerId) => history.participants[playerId]?.role;
+  const totalRounds = Math.max(1, Number(room.round) || 1);
+  const dayExiles = history.days.filter((day) => day.exiledId).length;
+  const nightVictims = history.nights.filter((night) => night.victimId).length;
+
+  const scoredPlayers = participants.map((participant) => {
+    const playerVotes = history.days.flatMap((day) => {
+      const vote = day.votes.find(
+        (entry) => entry.voterId === participant.id,
+      );
+      return vote ? [{ day, vote }] : [];
+    });
+    const mafiaVotes = playerVotes.filter(
+      ({ vote }) => roleOf(vote.targetId) === "mafia",
+    ).length;
+    const eligibleMafiaExiles = playerVotes.filter(
+      ({ day }) => roleOf(day.exiledId) === "mafia",
+    );
+    const mafiaExileContributions = eligibleMafiaExiles.filter(
+      ({ day, vote }) => vote.targetId === day.exiledId,
+    ).length;
+    const eligibleCitizenExiles = playerVotes.filter(
+      ({ day }) => day.exiledId && roleOf(day.exiledId) !== "mafia",
+    );
+    const citizenExileContributions = eligibleCitizenExiles.filter(
+      ({ day, vote }) => vote.targetId === day.exiledId,
+    ).length;
+
+    const investigations = history.nights
+      .map((night) => night.investigation)
+      .filter((entry) => entry?.playerId === participant.id);
+    const uniqueMafiaFound = new Set(
+      investigations
+        .filter((entry) => roleOf(entry.targetId) === "mafia")
+        .map((entry) => entry.targetId),
+    ).size;
+
+    const protections = history.nights.filter(
+      (night) => night.doctorId === participant.id,
+    );
+    const blockedAttacks = protections.filter(
+      (night) =>
+        night.attackTargetId &&
+        night.protectedId === night.attackTargetId &&
+        !night.victimId,
+    );
+    const sustainedRescues = blockedAttacks.filter((night) => {
+      const nextDay = history.days.find((day) => day.round > night.round);
+      return Boolean(nextDay && nextDay.exiledId !== night.attackTargetId);
+    }).length;
+
+    const mafiaNights = history.nights.filter((night) =>
+      night.mafiaIds.includes(participant.id),
+    );
+    const successfulAttacks = mafiaNights.filter(
+      (night) => night.victimId,
+    ).length;
+
+    const elimination = [
+      ...history.nights
+        .filter((night) => night.victimId === participant.id)
+        .map((night) => night.round),
+      ...history.days
+        .filter((day) => day.exiledId === participant.id)
+        .map((day) => day.round),
+    ].sort((left, right) => left - right)[0];
+    const survivedRounds = Math.min(elimination || totalRounds, totalRounds);
+    const won = roleTeam(participant.role) === room.winner;
+
+    let metrics;
+    if (participant.role === "cop") {
+      metrics = [
+        {
+          key: "investigation-success",
+          score: boundedScore(45, uniqueMafiaFound, history.initialMafiaCount),
+          max: 45,
+          earned: uniqueMafiaFound,
+          possible: history.initialMafiaCount,
+        },
+        {
+          key: "mafia-vote-hit",
+          score: boundedScore(10, mafiaVotes, playerVotes.length),
+          max: 10,
+          earned: mafiaVotes,
+          possible: playerVotes.length,
+        },
+        {
+          key: "mafia-exile-contribution",
+          score: boundedScore(
+            15,
+            mafiaExileContributions,
+            eligibleMafiaExiles.length,
+          ),
+          max: 15,
+          earned: mafiaExileContributions,
+          possible: eligibleMafiaExiles.length,
+        },
+      ];
+    } else if (participant.role === "doctor") {
+      metrics = [
+        {
+          key: "attack-prevention",
+          score: boundedScore(25, blockedAttacks.length, protections.length),
+          max: 25,
+          earned: blockedAttacks.length,
+          possible: protections.length,
+        },
+        {
+          key: "rescue-maintained",
+          score: boundedScore(10, sustainedRescues, blockedAttacks.length),
+          max: 10,
+          earned: sustainedRescues,
+          possible: blockedAttacks.length,
+        },
+        {
+          key: "mafia-vote-hit",
+          score: boundedScore(20, mafiaVotes, playerVotes.length),
+          max: 20,
+          earned: mafiaVotes,
+          possible: playerVotes.length,
+        },
+        {
+          key: "mafia-exile-contribution",
+          score: boundedScore(
+            15,
+            mafiaExileContributions,
+            eligibleMafiaExiles.length,
+          ),
+          max: 15,
+          earned: mafiaExileContributions,
+          possible: eligibleMafiaExiles.length,
+        },
+      ];
+    } else if (participant.role === "citizen") {
+      metrics = [
+        {
+          key: "mafia-vote-hit",
+          score: boundedScore(45, mafiaVotes, playerVotes.length),
+          max: 45,
+          earned: mafiaVotes,
+          possible: playerVotes.length,
+        },
+        {
+          key: "mafia-exile-contribution",
+          score: boundedScore(
+            25,
+            mafiaExileContributions,
+            eligibleMafiaExiles.length,
+          ),
+          max: 25,
+          earned: mafiaExileContributions,
+          possible: eligibleMafiaExiles.length,
+        },
+      ];
+    } else {
+      metrics = [
+        {
+          key: "night-attack-success",
+          score: boundedScore(45, successfulAttacks, mafiaNights.length),
+          max: 45,
+          earned: successfulAttacks,
+          possible: mafiaNights.length,
+        },
+        {
+          key: "citizen-exile-contribution",
+          score: boundedScore(
+            25,
+            citizenExileContributions,
+            eligibleCitizenExiles.length,
+          ),
+          max: 25,
+          earned: citizenExileContributions,
+          possible: eligibleCitizenExiles.length,
+        },
+      ];
+    }
+
+    metrics.push(
+      {
+        key: "survival",
+        score: boundedScore(15, survivedRounds, totalRounds),
+        max: 15,
+        earned: survivedRounds,
+        possible: totalRounds,
+      },
+      {
+        key: "team-win",
+        score: won ? 15 : 0,
+        max: 15,
+        earned: won ? 1 : 0,
+        possible: 1,
+      },
+    );
+
+    return {
+      ...participant,
+      team: roleTeam(participant.role),
+      alive: room.players.get(participant.id)?.alive || false,
+      score:
+        Math.round(
+          metrics.reduce((total, metric) => total + metric.score, 0) * 10,
+        ) / 10,
+      metrics,
+    };
+  });
+
+  scoredPlayers.sort(
+    (left, right) =>
+      right.score - left.score || left.name.localeCompare(right.name, "ko"),
+  );
+  const winningPlayers = scoredPlayers.filter(
+    (player) => player.team === room.winner,
+  );
+  const topScore = winningPlayers[0]?.score;
+  const mvpIds = winningPlayers
+    .filter((player) => player.score === topScore)
+    .map((player) => player.id);
+
+  return {
+    rounds: totalRounds,
+    participantCount: participants.length,
+    dayExiles,
+    nightVictims,
+    mvpIds,
+    players: scoredPlayers,
+  };
 }
 
 function requireRoom(rooms, rawCode) {
@@ -210,6 +500,15 @@ function recordInvestigation(room, player, action) {
 
 function normalizeDayResult(result) {
   if (!result) return null;
+  if (result.status === "no-elimination") {
+    return {
+      ...result,
+      status:
+        result.reason === "tie"
+          ? RESULT_STATUS.VOTE_TIE
+          : RESULT_STATUS.NO_MAJORITY,
+    };
+  }
   if (result.status) return result;
   return {
     ...result,
@@ -217,7 +516,9 @@ function normalizeDayResult(result) {
       ? result.role === "mafia"
         ? RESULT_STATUS.MAFIA_CAUGHT
         : RESULT_STATUS.DAY_EXILE
-      : RESULT_STATUS.NO_ELIMINATION,
+      : result.reason === "tie"
+        ? RESULT_STATUS.VOTE_TIE
+        : RESULT_STATUS.NO_MAJORITY,
   };
 }
 
@@ -312,8 +613,10 @@ function resolveNight(room) {
   if (cop) recordInvestigation(room, cop, room.actions.get(cop.id));
 
   let announcement;
+  let victimId = null;
   if (victim && victim.id !== protectedId) {
     victim.alive = false;
+    victimId = victim.id;
     room.nightResult = {
       status: RESULT_STATUS.NIGHT_VICTIM,
       reason: "mafia-attack",
@@ -332,6 +635,20 @@ function resolveNight(room) {
     };
     announcement = "평온한 아침입니다. 지난밤에는 아무도 사라지지 않았습니다.";
   }
+  room.gameHistory.nights.push({
+    round: room.round,
+    mafiaIds: mafia.map((player) => player.id),
+    attackTargetId: victim?.id || null,
+    victimId,
+    doctorId: doctor?.id || null,
+    protectedId: protectedId || null,
+    investigation: cop
+      ? {
+          playerId: cop.id,
+          targetId: room.actions.get(cop.id)?.targetId || null,
+        }
+      : null,
+  });
   room.phase = "result-night";
   room.announcement = announcement;
   room.actions.clear();
@@ -354,13 +671,22 @@ function resolveVote(room) {
     counts.set(vote.targetId, (counts.get(vote.targetId) || 0) + 1);
   const topVotes = Math.max(...counts.values());
   const requiredVotes = Math.floor(alive.length / 2) + 1;
+  const dayRecord = {
+    round: room.round,
+    votes: alive.map((player) => ({
+      voterId: player.id,
+      targetId: room.actions.get(player.id).targetId,
+    })),
+    exiledId: null,
+  };
   room.actions.clear();
 
   room.phase = "result-day";
   room.resultReady.clear();
   if (leaders.length > 1) {
+    room.gameHistory.days.push(dayRecord);
     room.dayResult = {
-      status: RESULT_STATUS.NO_ELIMINATION,
+      status: RESULT_STATUS.VOTE_TIE,
       reason: "tie",
       topVotes,
       requiredVotes,
@@ -370,8 +696,9 @@ function resolveVote(room) {
   }
 
   if (topVotes < requiredVotes) {
+    room.gameHistory.days.push(dayRecord);
     room.dayResult = {
-      status: RESULT_STATUS.NO_ELIMINATION,
+      status: RESULT_STATUS.NO_MAJORITY,
       reason: "no-majority",
       topVotes,
       requiredVotes,
@@ -381,6 +708,8 @@ function resolveVote(room) {
   }
 
   const voteTarget = room.players.get(leaders[0]);
+  dayRecord.exiledId = voteTarget.id;
+  room.gameHistory.days.push(dayRecord);
   voteTarget.alive = false;
   const resultStatus =
     voteTarget.role === "mafia"
@@ -442,6 +771,7 @@ export function createGameService() {
       privateNotices: new Map(),
       dayResult: null,
       nightResult: null,
+      gameHistory: emptyGameHistory(),
       joinUrl: "",
       settings: {
         copEnabled: true,
@@ -529,6 +859,7 @@ export function createGameService() {
       room.investigations.clear();
       room.dayResult = null;
       room.nightResult = null;
+      beginGameHistory(room);
       return;
     }
     if (type === "ready") {
@@ -678,6 +1009,7 @@ export function createGameService() {
       room.privateNotices.clear();
       room.dayResult = null;
       room.nightResult = null;
+      room.gameHistory = emptyGameHistory();
       for (const current of room.players.values()) {
         current.role = null;
         current.alive = true;
@@ -816,6 +1148,7 @@ export function createGameService() {
       openingDay: Boolean(room.openingDay),
       winner: room.winner,
       announcement: room.announcement,
+      analysis: room.phase === "ended" ? buildFinalAnalysis(room) : undefined,
       dayResult: room.phase === "result-day" ? room.dayResult : null,
       nightResult: room.phase === "result-night" ? room.nightResult : null,
       joinUrl: room.joinUrl,
@@ -938,6 +1271,7 @@ export function createGameService() {
         resultReady: new Set(saved.resultReady || []),
         investigations: normalizeInvestigations(saved.investigations),
         privateNotices: new Map(saved.privateNotices || []),
+        gameHistory: normalizedGameHistory(saved.gameHistory),
       });
       restored += 1;
     }

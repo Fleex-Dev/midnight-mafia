@@ -1,4 +1,7 @@
-// 실제 result-day.html / result-night.html을 읽어 다양한 결과를 재현하는 미리보기
+import { createScreens } from "./js/screens.js";
+import { loadTemplates } from "./js/templates.js";
+
+// 실제 결과 템플릿과 화면 렌더러를 사용해 다양한 결과를 재현하는 미리보기
 const container = document.querySelector("#preview-container");
 const caseSelect = document.querySelector("#case-select");
 const playButton = document.querySelector("#preview-play");
@@ -12,6 +15,224 @@ const FILES = {
 };
 
 const PLAYERS = ["현진", "지수", "민준", "서연", "도윤"];
+const ROLE_NAMES = {
+  mafia: "마피아",
+  cop: "경찰",
+  doctor: "의사",
+  citizen: "시민",
+};
+
+const metric = (key, score, max, earned, possible) => ({
+  key,
+  score,
+  max,
+  earned,
+  possible,
+});
+
+const END_CASES = {
+  "end-citizen": {
+    winner: "citizen",
+    round: 4,
+    analysis: {
+      rounds: 4,
+      participantCount: 6,
+      dayExiles: 2,
+      nightVictims: 1,
+      mvpIds: ["cop"],
+      players: [
+        {
+          id: "cop",
+          name: "지수",
+          role: "cop",
+          team: "citizen",
+          alive: true,
+          score: 94,
+          metrics: [
+            metric("investigation-success", 45, 45, 2, 2),
+            metric("mafia-vote-hit", 10, 10, 2, 2),
+            metric("mafia-exile-contribution", 15, 15, 2, 2),
+            metric("survival", 9, 15, 3, 4),
+            metric("team-win", 15, 15, 1, 1),
+          ],
+        },
+        {
+          id: "citizen-1",
+          name: "현진",
+          role: "citizen",
+          team: "citizen",
+          alive: true,
+          score: 81,
+          metrics: [
+            metric("mafia-vote-hit", 45, 45, 2, 2),
+            metric("mafia-exile-contribution", 15, 25, 1, 2),
+            metric("survival", 6, 15, 2, 4),
+            metric("team-win", 15, 15, 1, 1),
+          ],
+        },
+        {
+          id: "doctor",
+          name: "민서",
+          role: "doctor",
+          team: "citizen",
+          alive: true,
+          score: 74,
+          metrics: [
+            metric("attack-prevention", 25, 25, 1, 1),
+            metric("rescue-maintained", 10, 10, 1, 1),
+            metric("mafia-vote-hit", 10, 20, 1, 2),
+            metric("mafia-exile-contribution", 7.5, 15, 1, 2),
+            metric("survival", 6.5, 15, 2, 4),
+            metric("team-win", 15, 15, 1, 1),
+          ],
+        },
+        {
+          id: "mafia-1",
+          name: "용혁",
+          role: "mafia",
+          team: "mafia",
+          alive: false,
+          score: 68,
+          metrics: [
+            metric("night-attack-success", 45, 45, 3, 3),
+            metric("citizen-exile-contribution", 12.5, 25, 1, 2),
+            metric("survival", 10.5, 15, 3, 4),
+            metric("team-win", 0, 15, 0, 1),
+          ],
+        },
+        {
+          id: "citizen-2",
+          name: "서연",
+          role: "citizen",
+          team: "citizen",
+          alive: false,
+          score: 52.5,
+          metrics: [
+            metric("mafia-vote-hit", 22.5, 45, 1, 2),
+            metric("mafia-exile-contribution", 12.5, 25, 1, 2),
+            metric("survival", 2.5, 15, 1, 4),
+            metric("team-win", 15, 15, 1, 1),
+          ],
+        },
+        {
+          id: "mafia-2",
+          name: "도윤",
+          role: "mafia",
+          team: "mafia",
+          alive: false,
+          score: 45,
+          metrics: [
+            metric("night-attack-success", 30, 45, 2, 3),
+            metric("citizen-exile-contribution", 7.5, 25, 1, 3),
+            metric("survival", 7.5, 15, 2, 4),
+            metric("team-win", 0, 15, 0, 1),
+          ],
+        },
+      ],
+    },
+  },
+  "end-mafia": {
+    winner: "mafia",
+    round: 3,
+    analysis: {
+      rounds: 3,
+      participantCount: 6,
+      dayExiles: 1,
+      nightVictims: 2,
+      mvpIds: ["mafia-1"],
+      players: [
+        {
+          id: "mafia-1",
+          name: "용혁",
+          role: "mafia",
+          team: "mafia",
+          alive: true,
+          score: 90,
+          metrics: [
+            metric("night-attack-success", 45, 45, 2, 2),
+            metric("citizen-exile-contribution", 15, 25, 1, 2),
+            metric("survival", 15, 15, 3, 3),
+            metric("team-win", 15, 15, 1, 1),
+          ],
+        },
+        {
+          id: "mafia-2",
+          name: "도윤",
+          role: "mafia",
+          team: "mafia",
+          alive: true,
+          score: 81.7,
+          metrics: [
+            metric("night-attack-success", 45, 45, 2, 2),
+            metric("citizen-exile-contribution", 6.7, 25, 1, 3),
+            metric("survival", 15, 15, 3, 3),
+            metric("team-win", 15, 15, 1, 1),
+          ],
+        },
+        {
+          id: "cop",
+          name: "지수",
+          role: "cop",
+          team: "citizen",
+          alive: false,
+          score: 65,
+          metrics: [
+            metric("investigation-success", 45, 45, 2, 2),
+            metric("mafia-vote-hit", 10, 10, 2, 2),
+            metric("mafia-exile-contribution", 0, 15, 0, 0),
+            metric("survival", 10, 15, 2, 3),
+            metric("team-win", 0, 15, 0, 1),
+          ],
+        },
+        {
+          id: "doctor",
+          name: "민서",
+          role: "doctor",
+          team: "citizen",
+          alive: false,
+          score: 45,
+          metrics: [
+            metric("attack-prevention", 25, 25, 1, 1),
+            metric("rescue-maintained", 10, 10, 1, 1),
+            metric("mafia-vote-hit", 0, 20, 0, 2),
+            metric("mafia-exile-contribution", 0, 15, 0, 0),
+            metric("survival", 10, 15, 2, 3),
+            metric("team-win", 0, 15, 0, 1),
+          ],
+        },
+        {
+          id: "citizen-1",
+          name: "현진",
+          role: "citizen",
+          team: "citizen",
+          alive: true,
+          score: 37.5,
+          metrics: [
+            metric("mafia-vote-hit", 22.5, 45, 1, 2),
+            metric("mafia-exile-contribution", 0, 25, 0, 0),
+            metric("survival", 15, 15, 3, 3),
+            metric("team-win", 0, 15, 0, 1),
+          ],
+        },
+        {
+          id: "citizen-2",
+          name: "서연",
+          role: "citizen",
+          team: "citizen",
+          alive: false,
+          score: 27.5,
+          metrics: [
+            metric("mafia-vote-hit", 22.5, 45, 1, 2),
+            metric("mafia-exile-contribution", 0, 25, 0, 0),
+            metric("survival", 5, 15, 1, 3),
+            metric("team-win", 0, 15, 0, 1),
+          ],
+        },
+      ],
+    },
+  },
+};
+
 const CASES = [
   {
     id: "day-citizen",
@@ -39,7 +260,7 @@ const CASES = [
     id: "day-tie",
     label: "낮 · 동률로 추방 없음",
     phase: "day",
-    status: "no-elimination",
+    status: "vote-tie",
     stamp: "판결 보류",
     title: "아무도 추방되지 않았습니다.",
     reason: "최다 득표자가 두 명 이상입니다.",
@@ -49,7 +270,7 @@ const CASES = [
     id: "day-short",
     label: "낮 · 과반수 미달",
     phase: "day",
-    status: "no-elimination",
+    status: "no-majority",
     stamp: "판결 보류",
     title: "아무도 추방되지 않았습니다.",
     reason: "과반수에 도달하지 못했습니다.",
@@ -115,12 +336,23 @@ const CASES = [
     victim: "서연",
     investigation: "현진 님은 마피아가 아닙니다.",
   },
+  {
+    id: "end-citizen",
+    label: "게임 종료 · 시민 팀 승리",
+    phase: "ended",
+  },
+  {
+    id: "end-mafia",
+    label: "게임 종료 · 마피아 팀 승리",
+    phase: "ended",
+  },
 ];
 
 let index = 0;
 let timer = null;
 let renderSequence = 0;
 const htmlCache = new Map();
+let templatesReady = null;
 
 function setText(root, key, value) {
   root.querySelectorAll(`[data-text="${key}"]`).forEach((node) => {
@@ -147,6 +379,27 @@ async function loadTemplate(phase) {
     }
   }
   throw new Error(`결과 HTML을 찾지 못했습니다: ${attempts.join(", ")}`);
+}
+
+async function renderEndedCase(scene) {
+  templatesReady ||= loadTemplates();
+  await templatesReady;
+  const example = END_CASES[scene.id];
+  const mockState = {
+    phase: "ended",
+    winner: example.winner,
+    round: example.round,
+    announcement: "",
+    analysis: example.analysis,
+    you: { isHost: true },
+  };
+  const screens = createScreens({
+    getState: () => mockState,
+    getRoleRevealed: () => true,
+    roleName: (role) => ROLE_NAMES[role] || role,
+    locale: "ko",
+  });
+  return screens.renderEnded();
 }
 
 function populatePlayers(root, scene) {
@@ -193,6 +446,18 @@ async function renderCase() {
   caseSelect.value = scene.id;
   status.textContent = `${index + 1} / ${CASES.length} · ${scene.label}`;
   try {
+    if (scene.phase === "ended") {
+      const root = await renderEndedCase(scene);
+      if (sequence !== renderSequence) return;
+      root.dataset.case = scene.id;
+      root.querySelector("#restart")?.addEventListener("click", (event) => {
+        event.currentTarget.textContent = "새 게임 준비 완료";
+        event.currentTarget.disabled = true;
+      });
+      container.replaceChildren(root);
+      return;
+    }
+
     const markup = await loadTemplate(scene.phase);
     if (sequence !== renderSequence) return;
 
@@ -208,7 +473,10 @@ async function renderCase() {
       scene.status === "day-exile" || scene.status === "night-victim",
     );
     root.classList.toggle("case-success", scene.status === "mafia-caught");
-    root.classList.toggle("case-neutral", scene.status === "no-elimination");
+    root.classList.toggle(
+      "case-neutral",
+      scene.status === "vote-tie" || scene.status === "no-majority",
+    );
     root.classList.toggle("case-safe", scene.status === "safe");
     root.dataset.resultIcon = scene.status;
 

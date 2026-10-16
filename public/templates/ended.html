@@ -1,1 +1,44 @@
-<section class="panel end-panel phase-panel"><p class="eyebrow">게임 종료</p><div class="winner-symbol" data-text="symbol"></div><h1 data-text="title"></h1><p class="intro" data-text="announcement"></p><h2 class="list-title">모두의 정체</h2><ul class="player-list" data-slot="players"></ul><button id="restart" class="button primary" data-if="host">같은 멤버로 다시 하기</button><p class="waiting-copy" data-if="guest">방장이 새 게임을 열 수 있습니다.</p></section>
+<section class="end-report" aria-labelledby="end-title">
+  <header class="end-report-heading">
+    <div>
+      <p class="eyebrow" data-text="record"></p>
+      <h1 id="end-title" data-text="title"></h1>
+      <p class="end-report-copy" data-text="announcement"></p>
+    </div>
+    <span class="end-report-meta" data-text="meta"></span>
+  </header>
+  <div class="end-report-grid">
+    <section class="end-surface end-mvp" aria-labelledby="mvp-title">
+      <p class="eyebrow" data-text="mvpLabel"></p>
+      <div class="end-mvp-head">
+        <div class="end-mvp-icons" data-slot="mvpIcons"></div>
+        <div>
+          <h2 id="mvp-title" data-text="mvpNames"></h2>
+          <p data-text="mvpRoles"></p>
+        </div>
+      </div>
+      <p class="end-mvp-score"><strong data-text="mvpScore"></strong><span data-text="scoreLabel"></span></p>
+      <div class="end-metrics" data-slot="mvpMetrics"></div>
+    </section>
+    <section class="end-surface end-summary" aria-label="게임 주요 수치">
+      <div><span>진행 라운드</span><strong data-text="rounds"></strong><small>ROUNDS</small></div>
+      <div><span>참가자</span><strong data-text="participants"></strong><small>PLAYERS</small></div>
+      <div><span>낮 추방</span><strong data-text="dayExiles"></strong><small>DAY EXILES</small></div>
+      <div><span>밤 희생</span><strong data-text="nightVictims"></strong><small>NIGHT VICTIMS</small></div>
+    </section>
+  </div>
+  <section class="end-surface end-ranking" aria-labelledby="ranking-title">
+    <header>
+      <h2 id="ranking-title">참가자 활약</h2>
+      <span>앱에 기록된 선택과 결과만 반영</span>
+    </header>
+    <div class="end-ranking-list" data-slot="ranking"></div>
+    <h3 class="end-score-title">점수 기준</h3>
+    <div class="end-score-rules" data-slot="rules"></div>
+    <p class="end-score-note">활약 점수는 앱에 기록된 선택과 결과만으로 계산되며, 게임 중 나눈 대화와 심리전은 반영되지 않습니다.</p>
+  </section>
+  <div class="end-actions">
+    <button id="restart" class="button primary" data-if="host">같은 멤버로 다시 하기</button>
+    <p class="waiting-copy" data-if="guest">방장이 새 게임을 열 수 있습니다.</p>
+  </div>
+</section>
