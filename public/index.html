@@ -86,7 +86,65 @@
     <link rel="stylesheet" href="/css/role-icons.css" />
   </head>
   <body>
-    <main id="app" class="shell" aria-live="polite"></main>
+    <main id="app" class="shell" aria-live="polite">
+      <header class="topbar">
+        <div class="brand">
+          <span class="moon" aria-hidden="true"></span>
+          <strong>심야 마피아</strong>
+        </div>
+      </header>
+
+      <section
+        class="panel start-panel landing-layout"
+        aria-labelledby="initial-title"
+      >
+        <div class="landing-copy">
+          <p class="eyebrow">한 명의 거짓말쟁이를 찾아라</p>
+          <h1 id="initial-title">오늘 밤,<br />누구를 믿을까요?</h1>
+          <p class="intro">
+            앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는
+            실시간 마피아 게임입니다.
+          </p>
+          <div class="case-mark" aria-hidden="true">
+            <span>CASE FILE</span>
+            <b>00:00</b>
+          </div>
+        </div>
+
+        <div class="entry-card">
+          <p class="entry-number">MIDNIGHT MAFIA / 01</p>
+          <h2 class="entry-title">같은 공간에서 바로 시작하세요</h2>
+          <p class="entry-description">
+            방을 만든 뒤 초대 링크나 QR 코드를 공유하면 최대 12명이
+            휴대폰으로 함께 플레이할 수 있습니다.
+          </p>
+          <nav class="entry-actions" aria-label="게임 안내">
+            <a class="button primary static-entry-link" href="/guide.html"
+              >이용 방법</a
+            >
+            <a class="button secondary static-entry-link" href="/rules.html"
+              >게임 규칙</a
+            >
+          </nav>
+          <noscript>
+            <p class="entry-description static-entry-note">
+              게임을 시작하려면 브라우저에서 JavaScript를 활성화해 주세요.
+            </p>
+          </noscript>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <nav aria-label="서비스 안내">
+          <a href="/guide.html">이용 방법</a>
+          <a href="/rules.html">게임 규칙</a>
+          <a href="/roles.html">역할 설명</a>
+          <a href="/privacy.html">개인정보처리방침</a>
+        </nav>
+        <small>심야 마피아
+© 2026 FLEEX</small>
+      </footer>
+    </main>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script type="module" src="/app.js"></script>
   </body>

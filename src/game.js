@@ -650,6 +650,7 @@ function resolveNight(room) {
       : null,
   });
   room.phase = "result-night";
+  room.winner = winnerFor(room);
   room.announcement = announcement;
   room.actions.clear();
   room.resultReady.clear();
@@ -729,6 +730,7 @@ function resolveVote(room) {
     resultStatus === RESULT_STATUS.MAFIA_CAUGHT
       ? `${voteTarget.name} 님이 투표로 마피아임이 밝혀졌습니다.`
       : `${voteTarget.name} 님이 투표로 추방되었습니다. 정체는 ${roleWas(voteTarget.role)}.`;
+  room.winner = winnerFor(room);
 }
 
 export function createGameService() {
@@ -950,6 +952,10 @@ export function createGameService() {
     if (type === "confirm-result-day" || type === "confirm-vote-result") {
       if (room.phase !== "result-day")
         throw new GameError("지금은 투표 결과를 확인할 수 없습니다.");
+      if (room.winner) {
+        checkWinner(room, room.announcement);
+        return;
+      }
       if (!player.alive)
         throw new GameError(
           "탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.",
@@ -958,13 +964,17 @@ export function createGameService() {
       if (
         alivePlayers(room).every((current) => room.resultReady.has(current.id))
       ) {
-        if (!checkWinner(room)) beginNight(room);
+        if (!checkWinner(room, room.announcement)) beginNight(room);
       }
       return;
     }
     if (type === "confirm-result-night") {
       if (room.phase !== "result-night")
         throw new GameError("지금은 밤 결과를 확인할 수 없습니다.");
+      if (room.winner) {
+        checkWinner(room, room.announcement);
+        return;
+      }
       if (!player.alive)
         throw new GameError(
           "탈락한 참가자는 진행 확인 인원에 포함되지 않습니다.",

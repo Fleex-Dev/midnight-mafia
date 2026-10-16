@@ -441,7 +441,11 @@ export function createScreens({
           }[result.role]
         : result.roleName;
     const progress =
-      locale === "en"
+      s.winner
+        ? locale === "en"
+          ? "The winner is decided. Opening the final report."
+          : "승패가 결정되었습니다. 최종 결과로 이동합니다."
+        : locale === "en"
         ? `${s.resultReadyCount}/${s.resultReadyRequiredCount} players reviewed the result.`
         : `${s.resultReadyCount}/${s.resultReadyRequiredCount}명이 결과를 확인했습니다.`;
     const title = hasDayResult
@@ -509,7 +513,10 @@ export function createScreens({
     visible(el, "alive", s.you.alive);
     visible(el, "dead", !s.you.alive);
     const button = el.querySelector("#confirm-result-day");
-    if (button) button.disabled = s.you.resultReady;
+    if (button) {
+      button.disabled = s.you.resultReady || Boolean(s.winner);
+      button.toggleAttribute("hidden", Boolean(s.winner));
+    }
     slot(el, "players", players());
     return el;
   }
@@ -529,7 +536,11 @@ export function createScreens({
           }[result.role]
         : result.roleName;
     const progress =
-      locale === "en"
+      s.winner
+        ? locale === "en"
+          ? "The winner is decided. Opening the final report."
+          : "승패가 결정되었습니다. 최종 결과로 이동합니다."
+        : locale === "en"
         ? `${s.resultReadyCount}/${s.resultReadyRequiredCount} players reviewed the result.`
         : `${s.resultReadyCount}/${s.resultReadyRequiredCount}명이 결과를 확인했습니다.`;
     const investigation =
@@ -590,7 +601,10 @@ export function createScreens({
     visible(el, "alive", s.you.alive);
     visible(el, "dead", !s.you.alive);
     const button = el.querySelector("#confirm-result-night");
-    if (button) button.disabled = s.you.resultReady;
+    if (button) {
+      button.disabled = s.you.resultReady || Boolean(s.winner);
+      button.toggleAttribute("hidden", Boolean(s.winner));
+    }
     slot(el, "players", players());
     return el;
   }
@@ -670,7 +684,10 @@ export function createScreens({
   }
 
   function makeEndRankingRow(player, index, mvpIds) {
-    const row = document.createElement("div");
+    const item = document.createElement("details");
+    item.className = "end-ranking-item";
+
+    const row = document.createElement("summary");
     row.className = "end-ranking-row";
 
     const rank = document.createElement("span");
@@ -708,8 +725,19 @@ export function createScreens({
     const score = document.createElement("strong");
     score.className = "end-player-score";
     score.textContent = player.score.toFixed(1);
-    row.append(rank, identity, reason, score);
-    return row;
+
+    const toggle = document.createElement("span");
+    toggle.className = "end-ranking-toggle";
+    toggle.setAttribute("aria-hidden", "true");
+
+    row.append(rank, identity, reason, score, toggle);
+
+    const details = document.createElement("div");
+    details.className = "end-player-details";
+    for (const entry of player.metrics) details.append(makeEndMetric(entry));
+
+    item.append(row, details);
+    return item;
   }
 
   function endScoreRules() {
@@ -824,9 +852,27 @@ export function createScreens({
       el.querySelector("#ranking-title").textContent = "Player performance";
       el.querySelector(".end-ranking > header span").textContent =
         "Based only on choices and results recorded by the app";
+      const scoreDisclosure = el.querySelector(".end-score-disclosure summary");
+      if (scoreDisclosure) {
+        scoreDisclosure.querySelector("span").textContent = "Scoring criteria";
+      }
       el.querySelector(".end-score-note").textContent =
         "Performance scores are calculated only from choices and results recorded in the app. Conversations and social play during the game are not reflected.";
     }
+    const scoreDisclosure = el.querySelector(".end-score-disclosure");
+    const scoreDisclosureLabel = scoreDisclosure?.querySelector("summary small");
+    const syncScoreDisclosureLabel = () => {
+      if (!scoreDisclosureLabel) return;
+      scoreDisclosureLabel.textContent = scoreDisclosure.open
+        ? locale === "en"
+          ? "Close"
+          : "접기"
+        : locale === "en"
+          ? "View details"
+          : "펼쳐보기";
+    };
+    scoreDisclosure?.addEventListener("toggle", syncScoreDisclosureLabel);
+    syncScoreDisclosureLabel();
     return el;
   }
   return {

@@ -39,12 +39,14 @@ function voteFor(service, room, players, target) {
 
 function confirmDayResult(service, room, players) {
   for (const player of players.filter((current) => current.alive)) {
+    if (room.phase !== "result-day") break;
     service.applyAction(room, player, { type: "confirm-result-day" });
   }
 }
 
 function confirmNightResult(service, room, players) {
   for (const player of players.filter((current) => current.alive)) {
+    if (room.phase !== "result-night") break;
     service.applyAction(room, player, { type: "confirm-result-night" });
   }
 }
@@ -316,7 +318,7 @@ test("votes resolve and determine a winner", () => {
     new RegExp(`^${mafia.name} 님이 투표로 마피아임이 밝혀졌습니다`),
   );
   assert.ok(room.dayResult.topVotes >= room.dayResult.requiredVotes);
-  assert.equal(room.winner, null);
+  assert.equal(room.winner, "citizen");
   confirmDayResult(service, room, players);
   assert.equal(room.phase, "ended");
   assert.equal(room.winner, "citizen");
@@ -537,7 +539,7 @@ test("a night result remains visible when the final kill ends the game", () => {
   service.applyAction(room, mafia, { type: "night-confirm" });
 
   assert.equal(room.phase, "result-night");
-  assert.equal(room.winner, null);
+  assert.equal(room.winner, "mafia");
   assert.equal(room.nightResult.playerName, finalVictim.name);
   assert.equal(room.nightResult.status, "night-victim");
   assert.match(room.announcement, new RegExp(finalVictim.name));

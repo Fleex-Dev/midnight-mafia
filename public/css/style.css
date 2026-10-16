@@ -426,6 +426,18 @@ button {
   margin-top: 0;
 }
 
+.static-entry-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+}
+
+.static-entry-note {
+  margin: 1rem 0 0;
+}
+
 .entry-card > label:not(:first-child) {
   margin-top: 1.1rem;
 }
@@ -1685,11 +1697,64 @@ details .player-list {
 
 .end-ranking-row {
   display: grid;
-  grid-template-columns: 2rem minmax(10rem, 0.9fr) minmax(11rem, 1.35fr) 3.5rem;
+  grid-template-columns: 2rem minmax(10rem, 0.9fr) minmax(11rem, 1.35fr) 3.5rem 1rem;
   gap: 0.8rem;
   align-items: center;
   min-height: 4.25rem;
+  padding: 0;
+  color: inherit;
+  list-style: none;
+  text-align: left;
+}
+
+.end-ranking-row::-webkit-details-marker {
+  display: none;
+}
+
+.end-ranking-item {
+  margin: 0;
   border-top: 1px solid #302825;
+}
+
+.end-ranking-item[open] {
+  background: rgba(184, 154, 102, 0.035);
+}
+
+.end-ranking-toggle {
+  position: relative;
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--dim);
+}
+
+.end-ranking-toggle::before,
+.end-ranking-toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.7rem;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  transition: transform 0.18s ease;
+}
+
+.end-ranking-toggle::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.end-ranking-item[open] .end-ranking-toggle::after {
+  transform: translate(-50%, -50%) rotate(0);
+}
+
+.end-player-details {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0 1rem 1rem 2.8rem;
+  padding: 0.9rem 1rem;
+  border-left: 1px solid var(--line-strong);
+  background: rgba(13, 12, 11, 0.48);
 }
 
 .end-rank {
@@ -1765,8 +1830,16 @@ details .player-list {
   background: var(--line);
 }
 
+.end-score-disclosure {
+  margin: 1.1rem 0 0;
+}
+
 .end-score-title {
-  margin: 1.1rem 0 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0.7rem 0;
   color: var(--gold);
   font:
     700 0.64rem/1.3 ui-monospace,
@@ -1774,6 +1847,22 @@ details .player-list {
     Menlo,
     monospace;
   letter-spacing: 0.1em;
+  list-style: none;
+  text-align: left;
+}
+
+.end-score-title::-webkit-details-marker {
+  display: none;
+}
+
+.end-score-title small {
+  color: var(--dim);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+}
+
+.end-score-disclosure[open] .end-score-title small {
+  color: var(--muted);
 }
 
 .end-score-rules > div {
@@ -1813,6 +1902,127 @@ details .player-list {
 
 .end-actions .waiting-copy {
   margin: 0;
+}
+
+/* 단계가 실제로 바뀔 때만 app.js가 .screen-enter를 부여한다. */
+.screen-enter > .eyebrow,
+.screen-enter > h1,
+.screen-enter > .section-heading,
+.screen-enter > .phase-alerts,
+.screen-enter > .target-grid,
+.screen-enter > .player-list,
+.screen-enter > .button,
+.screen-enter > .lobby-invite-slot,
+.screen-enter > .role-options,
+.screen-enter > .landing-copy,
+.screen-enter > .entry-card {
+  animation: screen-content-enter 0.42s ease both;
+}
+
+.screen-enter > h1,
+.screen-enter > .section-heading {
+  animation-delay: 45ms;
+}
+
+.screen-enter > .phase-alerts,
+.screen-enter > .lobby-invite-slot,
+.screen-enter > .entry-card {
+  animation-delay: 90ms;
+}
+
+.screen-enter > .target-grid,
+.screen-enter > .role-options,
+.screen-enter > .player-list {
+  animation-delay: 135ms;
+}
+
+.screen-enter > .button {
+  animation-delay: 180ms;
+}
+
+.role-reveal-enter .role-symbol {
+  animation: role-card-reveal 0.58s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+
+.end-report.screen-enter .end-report-heading,
+.end-report.screen-enter .end-mvp,
+.end-report.screen-enter .end-summary,
+.end-report.screen-enter .end-ranking,
+.end-report.screen-enter .end-actions {
+  animation: end-report-enter 0.48s ease both;
+}
+
+.end-report.screen-enter .end-mvp {
+  animation-delay: 80ms;
+}
+
+.end-report.screen-enter .end-summary {
+  animation-delay: 140ms;
+}
+
+.end-report.screen-enter .end-ranking {
+  animation-delay: 200ms;
+}
+
+.end-report.screen-enter .end-actions {
+  animation-delay: 260ms;
+}
+
+.target.selected {
+  animation: selected-target-enter 0.28s ease both;
+}
+
+.end-report.screen-enter .end-metric-track i {
+  animation: end-metric-fill 0.65s 0.28s ease both;
+  transform-origin: left center;
+}
+
+@keyframes screen-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.55rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes role-card-reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.9) rotate(-2deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes end-report-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes selected-target-enter {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes end-metric-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* 10. 공통 푸터 / 토스트 */
@@ -2052,6 +2262,7 @@ details .player-list {
 .result-panel .case-record {
   --case-accent: var(--red-light);
   --case-tint: rgba(201, 52, 66, 0.12);
+  --case-surface: linear-gradient(110deg, #0b0a09, #16100f 70%, #0b0a09);
   position: relative;
   isolation: isolate;
   display: flex;
@@ -2063,18 +2274,36 @@ details .player-list {
   padding: clamp(1.2rem, 4vw, 2.4rem);
   overflow: hidden;
   border-block: 1px solid var(--line);
-  box-shadow: inset 0 3px 0 var(--case-accent);
+  background: #0b0a09;
+}
+
+.result-panel .case-record::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
+  height: 3px;
+  background: var(--case-accent);
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.result-panel .case-record::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   background:
     radial-gradient(circle at 50% 35%, var(--case-tint), transparent 48%),
-    linear-gradient(110deg, #0b0a09, #16100f 70%, #0b0a09);
+    var(--case-surface);
+  pointer-events: none;
 }
 
 .result-night-panel .case-record {
   --case-accent: #9aabc9;
   --case-tint: rgba(105, 132, 181, 0.12);
-  background:
-    radial-gradient(circle at 50% 35%, var(--case-tint), transparent 48%),
-    linear-gradient(180deg, #0a0a0c, #111219 62%, #09090b);
+  --case-surface: linear-gradient(180deg, #0a0a0c, #111219 62%, #09090b);
+  background: #09090b;
 }
 
 .result-panel.case-danger .case-record {
@@ -2160,6 +2389,11 @@ details .player-list {
 
 .result-panel .case-shutter__slat:nth-child(even) {
   transform-origin: right center;
+}
+
+.result-night-panel .case-shutter__slat {
+  border-bottom-color: rgba(145, 163, 194, 0.34);
+  background: #0b0c12;
 }
 
 .result-panel .case-record__category,
@@ -2294,6 +2528,15 @@ details .player-list {
     both;
 }
 
+.result-panel.is-revealing .case-record::after {
+  animation: case-backdrop-enter 0.72s 1.95s ease-out both;
+}
+
+.result-panel.is-revealing .case-record::before {
+  animation: case-accent-enter 0.56s 2.82s cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
 .result-panel.is-revealing .case-record__category,
 .result-panel.is-revealing .case-record__status {
   animation: case-entry 0.42s 3.08s ease both;
@@ -2351,6 +2594,26 @@ details .player-list {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes case-accent-enter {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes case-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -2416,12 +2679,16 @@ details .player-list {
   }
 
   .end-ranking-row {
-    grid-template-columns: 1.7rem minmax(0, 1fr) 3.2rem;
+    grid-template-columns: 1.7rem minmax(0, 1fr) 3.2rem 1rem;
     min-height: 4rem;
   }
 
   .end-player-reason {
     display: none;
+  }
+
+  .end-player-details {
+    margin-left: 1.7rem;
   }
 }
 

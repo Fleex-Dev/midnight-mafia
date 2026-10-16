@@ -44,7 +44,15 @@ let reconnectDelay = 1000;
 let roleRevealed = false;
 let roleVisible = false;
 let busy = false;
-let resultAnimation = { key: "", endAt: 0, complete: false, timer: null };
+let resultAnimation = {
+  key: "",
+  endAt: 0,
+  complete: false,
+  autoAdvanceSent: false,
+  timer: null,
+};
+let renderedViewKey = "";
+let roleRevealAnimationPending = false;
 
 // ============================================================
 // 2. 공통 유틸
@@ -470,6 +478,7 @@ function setupResultAnimation(content) {
       key,
       endAt: Date.now() + duration,
       complete: reduceMotion,
+      autoAdvanceSent: false,
       timer: null,
     };
   }
@@ -484,6 +493,19 @@ function setupResultAnimation(content) {
     content.classList.remove("is-revealing");
     skipButton?.setAttribute("hidden", "");
     if (confirmButton) confirmButton.disabled = Boolean(state.you.resultReady);
+    if (
+      state.winner &&
+      !resultAnimation.autoAdvanceSent &&
+      ["result-day", "result-night"].includes(state.phase)
+    ) {
+      resultAnimation.autoAdvanceSent = true;
+      sendAction({
+        type:
+          state.phase === "result-day"
+            ? "confirm-result-day"
+            : "confirm-result-night",
+      });
+    }
   };
 
   const remaining = resultAnimation.endAt - Date.now();
@@ -519,6 +541,10 @@ function renderLanding(note = "", mode = invitedRoomCode() ? "join" : "start") {
   }
 
   const panel = view(templateName, { note });
+
+  const viewKey = `landing:${mode}`;
+  if (renderedViewKey !== viewKey) panel.classList.add("screen-enter");
+  renderedViewKey = viewKey;
 
   app.replaceChildren();
 
@@ -701,6 +727,19 @@ function renderGame() {
   }
 
   const content = renderer();
+  const viewKey = `game:${state.code}:${state.phase}:${state.round || 0}`;
+  if (
+    renderedViewKey !== viewKey &&
+    !content.matches("[data-result-scene]")
+  ) {
+    content.classList.add("screen-enter");
+  }
+  if (roleRevealAnimationPending && state.phase === "reveal") {
+    content.classList.add("role-reveal-enter");
+    roleRevealAnimationPending = false;
+  }
+  renderedViewKey = viewKey;
+  setupResultAnimation(content);
 
   app.replaceChildren();
 
@@ -722,7 +761,6 @@ function renderGame() {
   );
 
   localize(app);
-  setupResultAnimation(content);
   bindGameEvents();
 }
 
@@ -790,6 +828,7 @@ function bindGameEvents() {
   // 최초 역할 확인
   document.querySelector("#reveal-role")?.addEventListener("click", () => {
     roleRevealed = true;
+    roleRevealAnimationPending = true;
     renderGame();
   });
 

@@ -170,6 +170,14 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     index,
     /rel="icon" type="image\/svg\+xml" href="\/icons\/site-icon\.svg"/,
   );
+  assert.match(index, /<h1 id="initial-title">오늘 밤,/);
+  assert.match(
+    index,
+    /앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는/,
+  );
+  for (const page of ["guide", "rules", "roles", "privacy"]) {
+    assert.match(index, new RegExp(`href="/${page}\\.html"`));
+  }
   assert.doesNotMatch(index, /name="keywords"/i);
   const structuredData = JSON.parse(
     index.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1],
@@ -192,6 +200,10 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(
     sitemap,
     /<loc>https:\/\/midnight-mafia\.fleex\.app\/en\/rules\.html<\/loc>/,
+  );
+  assert.match(
+    sitemap,
+    /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>\s*<lastmod>2026-10-16<\/lastmod>/,
   );
   assert.doesNotMatch(sitemap, /\?room=/);
   assert.equal(
@@ -307,7 +319,8 @@ test("phase UI includes confirmation flows, Mafia coordination, and result scene
   assert.match(screens, /Tie · No exile/);
   assert.doesNotMatch(screens, /No victim · Investigation result/);
   assert.match(screens, /el\.dataset\.resultIcon = resultStatus/);
-  assert.match(preview, /root\.dataset\.resultIcon = scene\.status/);
+  assert.match(preview, /"result-day": screens\.renderDayResult/);
+  assert.match(preview, /"result-night": screens\.renderNightResult/);
   for (const status of [
     "day-exile",
     "investigation",
@@ -337,24 +350,33 @@ test("phase UI includes confirmation flows, Mafia coordination, and result scene
   assert.match(styles, /\[data-result-icon="vote-tie"\]/);
   assert.match(styles, /\[data-result-icon="no-majority"\]/);
   assert.match(styles, /\.case-record__status-icon/);
+  assert.match(app, /content\.classList\.add\("screen-enter"\)/);
+  assert.match(app, /roleRevealAnimationPending/);
+  assert.match(styles, /@keyframes screen-content-enter/);
+  assert.match(styles, /@keyframes role-card-reveal/);
   assert.match(
     styles,
     /\.case-shutter__slat\s*\{[\s\S]*rgba\(184, 154, 102, 0\.68\)/,
   );
-  assert.doesNotMatch(styles, /\.result-night-panel \.case-shutter__slat/);
+  assert.match(
+    styles,
+    /\.result-night-panel \.case-shutter__slat\s*\{[\s\S]*rgba\(145, 163, 194, 0\.34\)[\s\S]*#0b0c12/,
+  );
   assert.doesNotMatch(styles, /\.result-stage/);
 });
 
 test("the final screen renders the performance report and scoring criteria", async () => {
-  const [ended, screens, styles, preview] = await Promise.all([
+  const [ended, screens, styles, preview, previewPage] = await Promise.all([
     read("public/templates/ended.html"),
     read("public/js/screens.js"),
     read("public/css/style.css"),
     read("public/result-preview.js"),
+    read("public/result-preview.html"),
   ]);
   assert.match(ended, /data-slot="mvpMetrics"/);
   assert.match(ended, /data-slot="ranking"/);
   assert.match(ended, /data-slot="rules"/);
+  assert.match(ended, /class="end-score-disclosure"/);
   assert.match(ended, /같은 멤버로 다시 하기/);
   assert.match(ended, /게임 중 나눈 대화와 심리전은 반영되지 않습니다/);
   assert.match(screens, /investigation-success/);
@@ -362,8 +384,24 @@ test("the final screen renders the performance report and scoring criteria", asy
   assert.match(screens, /createRoleIcon/);
   assert.match(styles, /\.end-report-grid/);
   assert.match(styles, /\.end-ranking-row/);
+  assert.match(styles, /\.end-player-details/);
+  assert.match(styles, /@keyframes end-report-enter/);
   assert.match(styles, /@media \(max-width: 760px\)/);
   assert.match(preview, /end-citizen/);
-  assert.match(preview, /end-mafia/);
-  assert.match(preview, /screens\.renderEnded\(\)/);
+  assert.match(preview, /opening-day/);
+  assert.match(preview, /night-result-safe/);
+  assert.match(preview, /day-result-two/);
+  assert.match(preview, /ROLE_VIEWERS/);
+  assert.match(preview, /mafiaSelections/);
+  assert.match(preview, /nightSelection/);
+  assert.match(preview, /roleSelect\.addEventListener/);
+  assert.match(preview, /ended: screens\.renderEnded/);
+  assert.match(preview, /previousButton\.addEventListener/);
+  assert.doesNotMatch(preview, /setInterval|setTimeout/);
+  assert.match(previewPage, /id="preview-timeline"/);
+  assert.match(previewPage, /id="preview-previous"/);
+  assert.match(previewPage, /id="role-select"/);
+  for (const role of ["mafia", "cop", "citizen", "doctor"])
+    assert.match(previewPage, new RegExp(`value="${role}"`));
+  assert.doesNotMatch(previewPage, /preview-auto/);
 });

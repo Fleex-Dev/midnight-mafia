@@ -33,9 +33,13 @@
       <span>앱에 기록된 선택과 결과만 반영</span>
     </header>
     <div class="end-ranking-list" data-slot="ranking"></div>
-    <h3 class="end-score-title">점수 기준</h3>
-    <div class="end-score-rules" data-slot="rules"></div>
-    <p class="end-score-note">활약 점수는 앱에 기록된 선택과 결과만으로 계산되며, 게임 중 나눈 대화와 심리전은 반영되지 않습니다.</p>
+    <details class="end-score-disclosure">
+      <summary class="end-score-title">
+        <span>점수 기준</span><small>펼쳐보기</small>
+      </summary>
+      <div class="end-score-rules" data-slot="rules"></div>
+      <p class="end-score-note">활약 점수는 앱에 기록된 선택과 결과만으로 계산되며, 게임 중 나눈 대화와 심리전은 반영되지 않습니다.</p>
+    </details>
   </section>
   <div class="end-actions">
     <button id="restart" class="button primary" data-if="host">같은 멤버로 다시 하기</button>
