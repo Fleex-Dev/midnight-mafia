@@ -15,6 +15,10 @@ const EN = {
   사망: "Eliminated",
   "한 명의 거짓말쟁이를 찾아라": "Find the liars among you",
   "어떻게 시작할까요?": "How would you like to start?",
+  "사회자 없이 휴대폰으로 시작하세요":
+    "Play on your phones—no moderator needed",
+  "4~12명이 앱 설치나 회원가입 없이 역할 확인, 밤 행동과 낮 투표를 각자의 휴대폰에서 진행합니다.":
+    "Four to twelve players can reveal roles, take night actions, and vote from their own phones—no app or account required.",
   "새로운 사건을 열거나, 친구의 사건에 합류하세요.":
     "Open a new case or join a friend's room.",
   "새로운 사건을 시작합니다": "Open a new case",
@@ -316,7 +320,10 @@ if (queryLocale === "en" || queryLocale === "ko") {
   } catch {}
 }
 document.documentElement.lang = locale;
-document.title = locale === "en" ? "Midnight Mafia" : "심야 마피아";
+document.title =
+  locale === "en"
+    ? "Play Mafia Online—No App or Moderator | Midnight Mafia"
+    : "사회자 없이 즐기는 휴대폰 마피아 게임 | 심야 마피아";
 
 function dynamicEnglish(text) {
   let match;
@@ -412,8 +419,9 @@ export function localize(root) {
     const original = node.nodeValue;
     const trimmed = original.trim();
     if (!trimmed) continue;
-    const translated = tr(trimmed);
-    if (translated !== trimmed)
+    const normalized = trimmed.replace(/\s+/g, " ");
+    const translated = tr(normalized);
+    if (translated !== normalized)
       node.nodeValue = original.replace(trimmed, translated);
   }
   for (const element of root.querySelectorAll(

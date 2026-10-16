@@ -120,6 +120,26 @@ test("information pages exist in Korean and English", async () => {
     enPrivacy,
     /does not add a separate Search Console[\s\S]*tracking script or cookie/,
   );
+
+  const [enHome, koRoles, enRoles] = await Promise.all([
+    read("public/pages/en/home.html"),
+    read("public/pages/ko/roles.html"),
+    read("public/pages/en/roles.html"),
+  ]);
+  assert.match(
+    enHome,
+    /<title>Play Mafia Online—No App or Moderator \| Midnight Mafia<\/title>/,
+  );
+  assert.match(
+    enHome,
+    /<h1>Play Mafia together—no app or moderator needed<\/h1>/,
+  );
+  assert.match(enHome, /4–12 players/);
+  assert.match(enHome, /href="\/\?lang=en"/);
+  for (const count of [4, 5, 6, 7, 8, 9, 10, 11, 12]) {
+    assert.match(koRoles, new RegExp(`<li>${count}명:`));
+    assert.match(enRoles, new RegExp(`<li>${count} players:`));
+  }
 });
 
 test("the application keeps localization and responsive styles wired", async () => {
@@ -142,17 +162,35 @@ test("the application keeps localization and responsive styles wired", async () 
 });
 
 test("search metadata, sitemap, verification, and private room indexing rules are present", async () => {
-  const [index, robots, sitemap, verification, worker, templates] = await Promise.all([
-    read("public/index.html"),
-    read("public/robots.txt"),
-    read("public/sitemap.xml"),
-    read("public/googlee55a4c2f1506c8a3.html"),
-    read("src/worker.js"),
-    read("public/js/templates.js"),
-  ]);
+  const [index, enHome, robots, sitemap, verification, worker, templates] =
+    await Promise.all([
+      read("public/index.html"),
+      read("public/pages/en/home.html"),
+      read("public/robots.txt"),
+      read("public/sitemap.xml"),
+      read("public/googlee55a4c2f1506c8a3.html"),
+      read("src/worker.js"),
+      read("public/js/templates.js"),
+    ]);
   assert.match(
     index,
     /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/"/,
+  );
+  assert.match(
+    index,
+    /<title>사회자 없이 즐기는 휴대폰 마피아 게임 \| 심야 마피아<\/title>/,
+  );
+  assert.match(
+    index,
+    /hreflang="en"\s+href="https:\/\/midnight-mafia\.fleex\.app\/en\/"/,
+  );
+  assert.match(
+    enHome,
+    /rel="canonical" href="https:\/\/midnight-mafia\.fleex\.app\/en\/"/,
+  );
+  assert.match(
+    enHome,
+    /hreflang="ko"\s+href="https:\/\/midnight-mafia\.fleex\.app\/"/,
   );
   assert.match(
     index,
@@ -174,7 +212,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /<h1 id="initial-title">오늘 밤,/);
   assert.match(
     index,
-    /앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는/,
+    /4~12명이 앱 설치나 회원가입 없이 각자의 휴대폰으로 역할을/,
   );
   for (const page of ["guide", "rules", "roles", "privacy"]) {
     assert.match(index, new RegExp(`href="/${page}\\.html"`));
@@ -200,10 +238,15 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.doesNotMatch(robots, /Disallow: \/templates(?:\/|\.json)/);
   assert.match(templates, /fetch\("\/app-templates\.json"\)/);
   assert.match(worker, /"\/app-templates\.json", "\/templates\.json"/);
+  assert.match(worker, /\["\/en\/", "\/pages\/en\/home\.html"\]/);
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
   assert.match(
     sitemap,
     /<loc>https:\/\/midnight-mafia\.fleex\.app\/en\/rules\.html<\/loc>/,
+  );
+  assert.match(
+    sitemap,
+    /<loc>https:\/\/midnight-mafia\.fleex\.app\/en\/<\/loc>/,
   );
   assert.match(
     sitemap,

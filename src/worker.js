@@ -38,6 +38,8 @@ const STATIC_ASSET_PATHS = new Map([
   ["/roles.html", "/pages/ko/roles.html"],
   ["/rules.html", "/pages/ko/rules.html"],
   ["/en/guide.html", "/pages/en/guide.html"],
+  ["/en/", "/pages/en/home.html"],
+  ["/en/index.html", "/pages/en/home.html"],
   ["/en/privacy.html", "/pages/en/privacy.html"],
   ["/en/roles.html", "/pages/en/roles.html"],
   ["/en/rules.html", "/pages/en/rules.html"],
