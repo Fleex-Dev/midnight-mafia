@@ -10,6 +10,18 @@
 - WebSocket Hibernation: 연결을 유지하면서 유휴 실행 시간 절약
 - Durable Objects Alarm: 연결 종료 유예와 비활성 방 정리
 
+공개 화면과 게임 화면은 URL 단위로 분리되어 있습니다.
+
+- `/`: 한국어 서비스 소개와 검색용 랜딩 페이지
+- `/en/`: 영어 서비스 소개와 검색용 랜딩 페이지
+- `/play/`: 방 만들기·참가하기
+- `/play/lobby/?room=CODE`: 초대와 역할 설정을 위한 대기실
+- `/play/game/?room=CODE`: 역할 확인부터 최종 결과까지의 게임 화면
+
+기존 `/?room=CODE` 초대 링크는 같은 쿼리를 유지한 채 `/play/`로
+이동합니다. 대기실과 게임 URL은 서버의 실제 단계에 맞춰 자동으로
+정정되며, 진행 중 새로고침도 저장된 참가 세션으로 복구합니다.
+
 게임방은 마지막 활동 후 최대 8시간 동안 보존됩니다. 연결이 끊긴 참가자는 30분 안에 같은 브라우저로 돌아오면 기존 참가 정보로 복구됩니다. 화면을 다시 켜거나 네트워크가 돌아오면 자동으로 재연결합니다.
 
 ## 게임 흐름
@@ -28,7 +40,8 @@
 - `investigation`: 경찰에게만 조사 결과가 제공됨
 - `mafia-caught`: 낮 투표로 마피아가 색출됨
 - `night-victim`: 밤에 마피아의 공격으로 희생자 발생
-- `no-elimination`: 동률 또는 과반수 미달로 추방자 없음
+- `vote-tie`: 최다 득표 동률로 추방자 없음
+- `no-majority`: 과반수 미달로 추방자 없음
 - `safe`: 의사가 공격 대상을 살렸거나 공격 결과가 없음
 
 `investigation`은 경찰 개인에게만 보이는 보조 결과이며, 같은 밤의
@@ -87,6 +100,7 @@ Durable Objects를 사용하는 프로젝트는 일반 Worker와 Preview 동작�
 - `src/game.js`: 방, 역할, 행동, 투표와 승리 판정
 - `wrangler.jsonc`: 정적 자산과 Durable Objects 배포 설정
 - `public/app.js`: 브라우저 상태, 자동 재연결과 이벤트 처리
+- `public/index.html`, `public/play/index.html`: 검색용 랜딩과 게임 앱 셸
 - `public/js/screens.js`: 단계별 화면 렌더링
 - `public/templates/`: 화면별 HTML 템플릿
 - `public/js/`: 화면 렌더링, 템플릿 처리와 한국어·영어 번역

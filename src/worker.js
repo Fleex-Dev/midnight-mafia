@@ -30,6 +30,12 @@ const TEMPLATE_NAMES = [
 ];
 const STATIC_ASSET_PATHS = new Map([
   ["/", "/index.html"],
+  ["/play/", "/play/index.html"],
+  ["/play/index.html", "/play/index.html"],
+  ["/play/lobby/", "/play/index.html"],
+  ["/play/lobby/index.html", "/play/index.html"],
+  ["/play/game/", "/play/index.html"],
+  ["/play/game/index.html", "/play/index.html"],
   ["/favicon.ico", "/icons/favicon-32.png"],
   ["/apple-touch-icon.png", "/icons/apple-touch-icon.png"],
   ["/apple-touch-icon-precomposed.png", "/icons/apple-touch-icon.png"],
@@ -191,7 +197,7 @@ export function personalizeLandingHtml(
     locale === "en"
       ? `You have been invited to Midnight Mafia. Tap to join the game.`
       : `심야 마피아 게임에 초대받았어요. 링크를 눌러 참여하세요.`;
-  const roomUrl = `${origin}/?room=${roomCode}&lang=${locale}`;
+  const roomUrl = `${origin}/play/?room=${roomCode}&lang=${locale}`;
   const imageUrl = `${origin}/og/room/${roomCode}.png?lang=${locale}&v=9`;
   return html
     .replace("<title>심야 마피아</title>", `<title>${title}</title>`)
@@ -372,6 +378,15 @@ export class RoomDurableObject {
           "방을 찾을 수 없습니다. 코드를 확인해 주세요.",
           404,
         );
+
+      if (room.joinUrl) {
+        const joinUrl = new URL(room.joinUrl);
+        if (joinUrl.pathname === "/") {
+          joinUrl.pathname = "/play/";
+          room.joinUrl = joinUrl.href;
+          await this.persist();
+        }
+      }
 
       if (request.method === "GET" && url.pathname === "/qr") {
         enforceRateLimit(
@@ -737,7 +752,7 @@ export default {
               body: JSON.stringify({
                 name: body.name,
                 code,
-                joinUrl: `${url.origin}/?room=${code}`,
+                joinUrl: `${url.origin}/play/?room=${code}`,
               }),
             }),
             env,
@@ -763,17 +778,39 @@ export default {
       if (url.pathname.startsWith("/api/")) {
         return json(404, { error: "요청을 찾을 수 없습니다." });
       }
-      const crawlerHeaders =
+
+      if (
         request.method === "GET" &&
-        url.pathname === "/" &&
+        ["/play", "/play/lobby", "/play/game"].includes(url.pathname)
+      ) {
+        url.pathname += "/";
+        return withSecurityHeaders(Response.redirect(url.href, 308), {
+          "x-robots-tag": "noindex",
+        });
+      }
+
+      if (
+        request.method === "GET" &&
+        ["/", "/index.html"].includes(url.pathname) &&
         url.searchParams.has("room")
+      ) {
+        url.pathname = "/play/";
+        return withSecurityHeaders(Response.redirect(url.href, 302), {
+          "x-robots-tag": "noindex",
+        });
+      }
+
+      const isPlayRoute =
+        url.pathname === "/play" || url.pathname.startsWith("/play/");
+      const crawlerHeaders =
+        request.method === "GET" && isPlayRoute
           ? { "x-robots-tag": "noindex" }
           : {};
       let assetResponse = await env.ASSETS.fetch(staticAssetRequest(request));
       const roomCode = url.searchParams.get("room")?.toUpperCase() || "";
       if (
         request.method === "GET" &&
-        url.pathname === "/" &&
+        isPlayRoute &&
         /^[A-HJ-NP-Z2-9]{4}$/.test(roomCode) &&
         assetResponse.ok
       ) {

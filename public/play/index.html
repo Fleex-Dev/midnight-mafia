@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#090914" />
+    <meta
+      name="description"
+      content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임"
+    />
+    <meta name="application-name" content="심야 마피아" />
+    <meta name="author" content="FLEEX" />
+    <meta name="robots" content="noindex, follow" />
+    <title>심야 마피아</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="심야 마피아" />
+    <meta property="og:title" content="심야 마피아" />
+    <meta
+      property="og:description"
+      content="앱 설치 없이 휴대폰으로 역할 확인과 투표를 진행하는 실시간 마피아 게임"
+    />
+    <meta property="og:url" content="https://midnight-mafia.fleex.app/" />
+    <meta
+      property="og:image"
+      content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9"
+    />
+    <meta
+      property="og:image:secure_url"
+      content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9"
+    />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="심야 마피아" />
+    <meta
+      name="twitter:description"
+      content="앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하는 실시간 마피아 게임"
+    />
+    <meta
+      name="twitter:image"
+      content="https://midnight-mafia.fleex.app/og/default.png?lang=ko&amp;v=9"
+    />
+    <link rel="icon" type="image/svg+xml" href="/icons/site-icon.svg?v=20261019" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=20261019" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=20261019" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/role-icons.css" />
+  </head>
+  <body>
+    <main id="app" class="shell" aria-live="polite">
+      <header class="topbar">
+        <a class="brand" href="/">
+          <span class="moon" aria-hidden="true"></span>
+          <strong>심야 마피아</strong>
+        </a>
+      </header>
+      <section class="panel centered-panel" aria-labelledby="loading-title">
+        <p class="eyebrow">MIDNIGHT MAFIA</p>
+        <h1 id="loading-title">게임을 준비하고 있습니다.</h1>
+      </section>
+    </main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

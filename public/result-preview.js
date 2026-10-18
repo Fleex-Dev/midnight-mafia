@@ -253,7 +253,7 @@ function baseState({
     openingDay,
     winner: null,
     announcement,
-    joinUrl: `${location.origin}/?room=SIM1`,
+    joinUrl: `${location.origin}/play/?room=SIM1`,
     qrDataUrl: "/api/rooms/SIM1/qr",
     settings: { copEnabled: true, doctorEnabled: true },
     roleSummary: { mafia: 2, cop: 1, doctor: 1, citizen: 2 },

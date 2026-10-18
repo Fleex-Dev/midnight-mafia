@@ -736,7 +736,7 @@ test("only inactive rooms are removed", () => {
 test("lobby state uses a lightweight QR endpoint", () => {
   const service = createGameService();
   const { room, player } = service.createRoom("방장");
-  room.joinUrl = `https://example.com/?room=${room.code}`;
+  room.joinUrl = `https://example.com/play/?room=${room.code}`;
   assert.equal(
     service.getState(room, player).qrDataUrl,
     `/api/rooms/${room.code}/qr`,

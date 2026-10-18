@@ -135,7 +135,7 @@ test("information pages exist in Korean and English", async () => {
     /<h1>Play Mafia online with friends—no app or moderator needed<\/h1>/,
   );
   assert.match(enHome, /4–12 players/);
-  assert.match(enHome, /href="\/\?lang=en"/);
+  assert.match(enHome, /href="\/play\/\?lang=en"/);
   for (const count of [4, 5, 6, 7, 8, 9, 10, 11, 12]) {
     assert.match(koRoles, new RegExp(`data-player-count="${count}"`));
     assert.match(enRoles, new RegExp(`data-player-count="${count}"`));
@@ -145,13 +145,21 @@ test("information pages exist in Korean and English", async () => {
 });
 
 test("the application keeps localization and responsive styles wired", async () => {
-  const [index, app, styles] = await Promise.all([
+  const [index, play, app, styles] = await Promise.all([
     read("public/index.html"),
+    read("public/play/index.html"),
     read("public/app.js"),
     read("public/css/style.css"),
   ]);
   assert.match(index, /viewport-fit=cover/);
+  assert.match(index, /href="\/play\/"/);
+  assert.doesNotMatch(index, /src="\/app\.js"/);
+  assert.match(play, /name="robots" content="noindex, follow"/);
+  assert.match(play, /src="\/app\.js"/);
   assert.match(app, /setLocalePreference/);
+  assert.match(app, /lobby: "\/play\/lobby\/"/);
+  assert.match(app, /game: "\/play\/game\/"/);
+  assert.match(app, /syncStateRoute/);
   assert.match(app, /© 2026 FLEEX/);
   assert.match(app, /visibilitychange/);
   assert.match(app, /window\.addEventListener\("pageshow", resumeConnection\)/);
@@ -164,9 +172,10 @@ test("the application keeps localization and responsive styles wired", async () 
 });
 
 test("search metadata, sitemap, verification, and private room indexing rules are present", async () => {
-  const [index, enHome, robots, sitemap, verification, worker, templates] =
+  const [index, play, enHome, robots, sitemap, verification, worker, templates] =
     await Promise.all([
       read("public/index.html"),
+      read("public/play/index.html"),
       read("public/pages/en/home.html"),
       read("public/robots.txt"),
       read("public/sitemap.xml"),
@@ -222,6 +231,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     assert.match(index, new RegExp(`href="/${page}\\.html"`));
   }
   assert.doesNotMatch(index, /name="keywords"/i);
+  assert.match(play, /name="robots" content="noindex, follow"/);
   const structuredData = JSON.parse(
     index.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1],
   );
@@ -230,6 +240,12 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     structuredData["@graph"].some(
       (entry) => entry["@type"] === "WebApplication",
     ),
+  );
+  assert.equal(
+    structuredData["@graph"].find(
+      (entry) => entry["@type"] === "WebApplication",
+    ).url,
+    "https://midnight-mafia.fleex.app/play/",
   );
   assert.ok(
     structuredData["@graph"].some((entry) => entry["@type"] === "WebSite"),
@@ -243,6 +259,11 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(templates, /fetch\("\/app-templates\.json"\)/);
   assert.match(worker, /"\/app-templates\.json", "\/templates\.json"/);
   assert.match(worker, /\["\/en\/", "\/pages\/en\/home\.html"\]/);
+  assert.match(worker, /\["\/play\/", "\/play\/index\.html"\]/);
+  assert.match(worker, /\["\/play\/lobby\/", "\/play\/index\.html"\]/);
+  assert.match(worker, /\["\/play\/game\/", "\/play\/index\.html"\]/);
+  assert.match(worker, /url\.pathname = "\/play\/"/);
+  assert.match(worker, /joinUrl: `\$\{url\.origin\}\/play\/\?room=\$\{code\}`/);
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
   assert.match(
     sitemap,
@@ -257,6 +278,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
     /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>\s*<lastmod>2026-10-19<\/lastmod>/,
   );
   assert.doesNotMatch(sitemap, /\?room=/);
+  assert.doesNotMatch(sitemap, /<loc>[^<]*\/play\//);
   assert.equal(
     verification.trim(),
     "google-site-verification: googlee55a4c2f1506c8a3.html",

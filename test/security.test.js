@@ -146,7 +146,7 @@ test("room invite metadata links to its dynamic localized social image", () => {
     "A9UL",
   );
   assert.match(result, /심야 마피아 · 게임에 초대됐어요/);
-  assert.match(result, /\?room=A9UL&lang=ko/);
+  assert.match(result, /\/play\/\?room=A9UL&lang=ko/);
   assert.match(result, /\/og\/room\/A9UL\.png\?lang=ko&v=9/);
   assert.doesNotMatch(result, /og\/default\.png/);
 
@@ -157,6 +157,6 @@ test("room invite metadata links to its dynamic localized social image", () => {
     "en",
   );
   assert.match(english, /Midnight Mafia · You’re invited/);
-  assert.match(english, /\?room=A9UL&lang=en/);
+  assert.match(english, /\/play\/\?room=A9UL&lang=en/);
   assert.match(english, /\/og\/room\/A9UL\.png\?lang=en&v=9/);
 });

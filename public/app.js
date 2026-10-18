@@ -16,6 +16,11 @@ const app = document.querySelector("#app");
 const toast = document.querySelector("#toast");
 
 const STORAGE_KEY = "midnight-mafia-session";
+const PLAY_ROUTES = {
+  entry: "/play/",
+  lobby: "/play/lobby/",
+  game: "/play/game/",
+};
 
 const phaseLabels = {
   lobby: "대기실",
@@ -66,6 +71,42 @@ function invitedRoomCode() {
       .toUpperCase()
       .slice(0, 4) || ""
   );
+}
+
+function playRouteUrl(path, code = "") {
+  const url = new URL(path, location.origin);
+  const language = new URLSearchParams(location.search).get("lang");
+
+  if (code) url.searchParams.set("room", code);
+  if (language === "ko" || language === "en") {
+    url.searchParams.set("lang", language);
+  }
+
+  return url;
+}
+
+function navigateToPlayRoute(path, code = "") {
+  const target = playRouteUrl(path, code);
+
+  if (location.pathname === target.pathname && location.search === target.search) {
+    return false;
+  }
+
+  location.replace(target.href);
+  return true;
+}
+
+function stateRoute() {
+  return state?.phase === "lobby" ? PLAY_ROUTES.lobby : PLAY_ROUTES.game;
+}
+
+function syncStateRoute() {
+  return state ? navigateToPlayRoute(stateRoute(), state.code) : false;
+}
+
+function resetEntryRoute(code = "") {
+  const target = playRouteUrl(PLAY_ROUTES.entry, code);
+  history.replaceState(null, "", `${target.pathname}${target.search}`);
 }
 
 function readSession() {
@@ -179,6 +220,7 @@ function sendAction(action) {
     });
 
     state = data.state;
+    if (syncStateRoute()) return;
     renderGame();
   });
 }
@@ -227,6 +269,7 @@ function connect() {
       resetRoleVisibility();
     }
 
+    if (syncStateRoute()) return;
     renderGame();
   });
 
@@ -239,6 +282,11 @@ function connect() {
       saveSession(null);
       state = null;
       resetRoleVisibility();
+
+      if (location.pathname !== PLAY_ROUTES.entry) {
+        navigateToPlayRoute(PLAY_ROUTES.entry, invitedRoomCode());
+        return;
+      }
 
       renderLanding("참가 정보가 만료되었습니다. 다시 입장해 주세요.");
       return;
@@ -271,6 +319,7 @@ async function restoreSession() {
     state = data.state;
     resetRoleVisibility();
 
+    if (syncStateRoute()) return;
     renderGame();
     connect();
   } catch (error) {
@@ -279,6 +328,11 @@ async function restoreSession() {
     saveSession(null);
     state = null;
     resetRoleVisibility();
+
+    if (location.pathname !== PLAY_ROUTES.entry) {
+      navigateToPlayRoute(PLAY_ROUTES.entry, invitedRoomCode());
+      return;
+    }
 
     renderLanding("이전 참가 정보를 복원할 수 없습니다.");
   }
@@ -580,7 +634,7 @@ function renderLanding(note = "", mode = invitedRoomCode() ? "join" : "start") {
 
   // 돌아가기
   panel.querySelector("#back")?.addEventListener("click", () => {
-    history.replaceState(null, "", "/");
+    resetEntryRoute();
     renderLanding("", "start");
   });
 
@@ -604,10 +658,7 @@ function renderLanding(note = "", mode = invitedRoomCode() ? "join" : "start") {
         saveSession(data.session);
         state = data.state;
 
-        history.replaceState(null, "", `/?room=${state.code}`);
-
-        renderGame();
-        connect();
+        navigateToPlayRoute(PLAY_ROUTES.lobby, state.code);
       });
 
     panel.querySelector("#create")?.addEventListener("click", createGame);
@@ -683,10 +734,7 @@ function renderLanding(note = "", mode = invitedRoomCode() ? "join" : "start") {
         saveSession(data.session);
         state = data.state;
 
-        history.replaceState(null, "", `/?room=${state.code}`);
-
-        renderGame();
-        connect();
+        navigateToPlayRoute(PLAY_ROUTES.lobby, state.code);
       });
 
     panel.querySelector("#join")?.addEventListener("click", joinGame);
@@ -801,8 +849,7 @@ function bindGameEvents() {
         saveSession(null);
         state = null;
         resetRoleVisibility();
-        history.replaceState(null, "", "/");
-        renderLanding();
+        location.replace(locale === "en" ? "/en/" : "/");
       }
     });
   });
@@ -991,7 +1038,16 @@ try {
 
 if (templatesReady) {
   const invitedRoom = invitedRoomCode();
-  if (session && (!invitedRoom || invitedRoom === session.code)) {
+  const nestedRoute = [PLAY_ROUTES.lobby, PLAY_ROUTES.game].includes(
+    location.pathname,
+  );
+
+  if (
+    nestedRoute &&
+    (!invitedRoom || !session || invitedRoom !== session.code)
+  ) {
+    navigateToPlayRoute(PLAY_ROUTES.entry, invitedRoom);
+  } else if (session && (!invitedRoom || invitedRoom === session.code)) {
     restoreSession();
   } else {
     renderLanding(
