@@ -73,6 +73,12 @@ function invitedRoomCode() {
   );
 }
 
+function requestedLandingMode() {
+  if (invitedRoomCode()) return "join";
+  const mode = new URLSearchParams(location.search).get("mode");
+  return ["create", "join"].includes(mode) ? mode : "start";
+}
+
 function playRouteUrl(path, code = "") {
   const url = new URL(path, location.origin);
   const language = new URLSearchParams(location.search).get("lang");
@@ -343,7 +349,7 @@ async function restoreSession() {
 // ============================================================
 
 async function copyInviteLink() {
-  const inviteUrl = new URL(state.joinUrl, location.origin);
+  const inviteUrl = playRouteUrl(PLAY_ROUTES.entry, state.code);
   inviteUrl.searchParams.set("lang", locale);
 
   if (navigator.clipboard?.writeText) {
@@ -578,7 +584,7 @@ function setupResultAnimation(content) {
 // 9. 랜딩 화면
 // ============================================================
 
-function renderLanding(note = "", mode = invitedRoomCode() ? "join" : "start") {
+function renderLanding(note = "", mode = requestedLandingMode()) {
   state = null;
   resetRoleVisibility();
 

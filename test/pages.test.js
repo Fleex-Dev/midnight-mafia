@@ -89,6 +89,8 @@ test("lobby includes QR, share icon, and host controls", async () => {
   assert.match(lobby, /id="setting-doctor"/);
   assert.match(lobby, /id="start"/);
   assert.match(app, /addEventListener\("click", copyInvite\)/);
+  assert.match(app, /playRouteUrl\(PLAY_ROUTES\.entry, state\.code\)/);
+  assert.match(lobby, /id="invite-link"/);
   assert.match(app, /searchParams\.set\("lang", locale\)/);
   assert.match(app, /navigator\.clipboard\.writeText\(inviteUrl\.href\)/);
   assert.doesNotMatch(app, /navigator\.share/);
@@ -152,7 +154,10 @@ test("the application keeps localization and responsive styles wired", async () 
     read("public/css/style.css"),
   ]);
   assert.match(index, /viewport-fit=cover/);
-  assert.match(index, /href="\/play\/"/);
+  assert.match(index, /href="\/play\/\?mode=create"/);
+  assert.match(index, /href="\/play\/\?mode=join"/);
+  assert.match(index, />새 게임 만들기</);
+  assert.match(index, />방 참가하기</);
   assert.doesNotMatch(index, /src="\/app\.js"/);
   assert.match(play, /name="robots" content="noindex, follow"/);
   assert.match(play, /src="\/app\.js"/);
@@ -160,6 +165,7 @@ test("the application keeps localization and responsive styles wired", async () 
   assert.match(app, /lobby: "\/play\/lobby\/"/);
   assert.match(app, /game: "\/play\/game\/"/);
   assert.match(app, /syncStateRoute/);
+  assert.match(app, /requestedLandingMode/);
   assert.match(app, /© 2026 FLEEX/);
   assert.match(app, /visibilitychange/);
   assert.match(app, /window\.addEventListener\("pageshow", resumeConnection\)/);
@@ -264,6 +270,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(worker, /\["\/play\/game\/", "\/play\/index\.html"\]/);
   assert.match(worker, /url\.pathname = "\/play\/"/);
   assert.match(worker, /joinUrl: `\$\{url\.origin\}\/play\/\?room=\$\{code\}`/);
+  assert.match(worker, /new URL\("\/play\/", new URL\(room\.joinUrl\)\.origin\)/);
   assert.match(sitemap, /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>/);
   assert.match(
     sitemap,

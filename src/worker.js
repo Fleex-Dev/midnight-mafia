@@ -395,7 +395,8 @@ export class RoomDurableObject {
           60,
           60 * 1000,
         );
-        const joinUrl = new URL(room.joinUrl);
+        const joinUrl = new URL("/play/", new URL(room.joinUrl).origin);
+        joinUrl.searchParams.set("room", room.code);
         const language = url.searchParams.get("lang");
         if (language === "ko" || language === "en") {
           joinUrl.searchParams.set("lang", language);

@@ -157,7 +157,8 @@ export function createScreens({
 
     el.classList.add(s.you.isHost ? "lobby-host" : "lobby-guest");
 
-    const inviteUrl = new URL(s.joinUrl, location.origin);
+    const inviteUrl = new URL("/play/", location.origin);
+    inviteUrl.searchParams.set("room", s.code);
     inviteUrl.searchParams.set("lang", locale);
     const qrUrl = new URL(s.qrDataUrl, location.origin);
     qrUrl.searchParams.set("lang", locale);
