@@ -128,11 +128,11 @@ test("information pages exist in Korean and English", async () => {
   ]);
   assert.match(
     enHome,
-    /<title>Play Mafia Online—No App or Moderator \| Midnight Mafia<\/title>/,
+    /<title>Play Mafia Online With Friends—No Moderator \| Midnight Mafia<\/title>/,
   );
   assert.match(
     enHome,
-    /<h1>Play Mafia together—no app or moderator needed<\/h1>/,
+    /<h1>Play Mafia online with friends—no app or moderator needed<\/h1>/,
   );
   assert.match(enHome, /4–12 players/);
   assert.match(enHome, /href="\/\?lang=en"/);
@@ -178,8 +178,10 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   );
   assert.match(
     index,
-    /<title>사회자 없이 즐기는 휴대폰 마피아 게임 \| 심야 마피아<\/title>/,
+    /<title>사회자 없는 온라인 마피아 게임 \| 심야 마피아<\/title>/,
   );
+  assert.match(index, /무료 온라인 마피아 게임 사이트/);
+  assert.match(enHome, /free browser-based social deduction game/i);
   assert.match(
     index,
     /hreflang="en"\s+href="https:\/\/midnight-mafia\.fleex\.app\/en\/"/,
@@ -212,7 +214,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /<h1 id="initial-title">오늘 밤,/);
   assert.match(
     index,
-    /4~12명이 앱 설치나 회원가입 없이 각자의 휴대폰으로 역할을/,
+    /4~12명이 사회자 없이 각자의 휴대폰으로 즐기는 무료 온라인 마피아 게임 사이트/,
   );
   for (const page of ["guide", "rules", "roles", "privacy"]) {
     assert.match(index, new RegExp(`href="/${page}\\.html"`));
@@ -250,7 +252,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   );
   assert.match(
     sitemap,
-    /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>\s*<lastmod>2026-10-16<\/lastmod>/,
+    /<loc>https:\/\/midnight-mafia\.fleex\.app\/<\/loc>\s*<lastmod>2026-10-19<\/lastmod>/,
   );
   assert.doesNotMatch(sitemap, /\?room=/);
   assert.equal(

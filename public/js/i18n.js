@@ -15,10 +15,10 @@ const EN = {
   사망: "Eliminated",
   "한 명의 거짓말쟁이를 찾아라": "Find the liars among you",
   "어떻게 시작할까요?": "How would you like to start?",
-  "사회자 없이 휴대폰으로 시작하세요":
-    "Play on your phones—no moderator needed",
-  "4~12명이 앱 설치나 회원가입 없이 역할 확인, 밤 행동과 낮 투표를 각자의 휴대폰에서 진행합니다.":
-    "Four to twelve players can reveal roles, take night actions, and vote from their own phones—no app or account required.",
+  "사회자 없는 온라인 마피아 게임":
+    "Play Mafia online—no moderator needed",
+  "4~12명이 방 코드나 QR 초대 링크로 참가해 역할 확인, 밤 행동과 낮 투표를 각자의 휴대폰에서 진행합니다.":
+    "Four to twelve friends can join by room code or QR link, then reveal roles, take night actions, and vote from their own phones.",
   "새로운 사건을 열거나, 친구의 사건에 합류하세요.":
     "Open a new case or join a friend's room.",
   "새로운 사건을 시작합니다": "Open a new case",
@@ -39,8 +39,8 @@ const EN = {
   "방 코드 지우기": "Clear room code",
   "오늘 밤,": "Tonight,",
   "누구를 믿을까요?": "who will you trust?",
-  "앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하세요.":
-    "Check your role and vote from your own phone—no app required.",
+  "앱 설치 없이 방 코드나 QR로 모여 각자의 휴대폰으로 역할을 확인하고 투표하세요.":
+    "Join by room code or QR, then check your role and vote from your own phone—no app required.",
   "내 이름": "Your nickname",
   "예: 지수": "e.g. Alex",
   "새 게임 만들기": "Create a game",
@@ -322,8 +322,8 @@ if (queryLocale === "en" || queryLocale === "ko") {
 document.documentElement.lang = locale;
 document.title =
   locale === "en"
-    ? "Play Mafia Online—No App or Moderator | Midnight Mafia"
-    : "사회자 없이 즐기는 휴대폰 마피아 게임 | 심야 마피아";
+    ? "Play Mafia Online With Friends—No Moderator | Midnight Mafia"
+    : "사회자 없는 온라인 마피아 게임 | 심야 마피아";
 
 function dynamicEnglish(text) {
   let match;
