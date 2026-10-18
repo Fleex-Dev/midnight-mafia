@@ -120,17 +120,49 @@
             Mafia per four players. The Detective is included by default, and
             the Doctor turns on automatically when the fifth player joins.
           </p>
-          <ul>
-            <li>4 players: 1 Mafia · 1 Detective · 2 Citizens</li>
-            <li>5 players: 1 Mafia · 1 Detective · 1 Doctor · 2 Citizens</li>
-            <li>6 players: 1 Mafia · 1 Detective · 1 Doctor · 3 Citizens</li>
-            <li>7 players: 1 Mafia · 1 Detective · 1 Doctor · 4 Citizens</li>
-            <li>8 players: 2 Mafia · 1 Detective · 1 Doctor · 4 Citizens</li>
-            <li>9 players: 2 Mafia · 1 Detective · 1 Doctor · 5 Citizens</li>
-            <li>10 players: 2 Mafia · 1 Detective · 1 Doctor · 6 Citizens</li>
-            <li>11 players: 2 Mafia · 1 Detective · 1 Doctor · 7 Citizens</li>
-            <li>12 players: 3 Mafia · 1 Detective · 1 Doctor · 7 Citizens</li>
-          </ul>
+          <div class="role-setup-table-wrap">
+            <table class="role-setup-table">
+              <caption>Default role setup for 4 to 12 players</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Players</th>
+                  <th scope="col" class="setup-mafia">Mafia</th>
+                  <th scope="col" class="setup-cop">Detective</th>
+                  <th scope="col" class="setup-doctor">Doctor</th>
+                  <th scope="col" class="setup-citizen">Citizen</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-player-count="4">
+                  <th scope="row">4</th><td>1</td><td>1</td><td class="is-zero">0</td><td>2</td>
+                </tr>
+                <tr data-player-count="5">
+                  <th scope="row">5</th><td>1</td><td>1</td><td>1</td><td>2</td>
+                </tr>
+                <tr data-player-count="6">
+                  <th scope="row">6</th><td>1</td><td>1</td><td>1</td><td>3</td>
+                </tr>
+                <tr data-player-count="7">
+                  <th scope="row">7</th><td>1</td><td>1</td><td>1</td><td>4</td>
+                </tr>
+                <tr data-player-count="8" class="mafia-step">
+                  <th scope="row">8</th><td>2</td><td>1</td><td>1</td><td>4</td>
+                </tr>
+                <tr data-player-count="9">
+                  <th scope="row">9</th><td>2</td><td>1</td><td>1</td><td>5</td>
+                </tr>
+                <tr data-player-count="10">
+                  <th scope="row">10</th><td>2</td><td>1</td><td>1</td><td>6</td>
+                </tr>
+                <tr data-player-count="11">
+                  <th scope="row">11</th><td>2</td><td>1</td><td>1</td><td>7</td>
+                </tr>
+                <tr data-player-count="12" class="mafia-step">
+                  <th scope="row">12</th><td>3</td><td>1</td><td>1</td><td>7</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <div class="note-box">
             The host can turn the Detective and Doctor on or off in the lobby.
             Disabled special roles become Citizens.

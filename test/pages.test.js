@@ -137,9 +137,11 @@ test("information pages exist in Korean and English", async () => {
   assert.match(enHome, /4–12 players/);
   assert.match(enHome, /href="\/\?lang=en"/);
   for (const count of [4, 5, 6, 7, 8, 9, 10, 11, 12]) {
-    assert.match(koRoles, new RegExp(`<li>${count}명:`));
-    assert.match(enRoles, new RegExp(`<li>${count} players:`));
+    assert.match(koRoles, new RegExp(`data-player-count="${count}"`));
+    assert.match(enRoles, new RegExp(`data-player-count="${count}"`));
   }
+  assert.match(koRoles, /class="role-setup-table"/);
+  assert.match(enRoles, /class="role-setup-table"/);
 });
 
 test("the application keeps localization and responsive styles wired", async () => {

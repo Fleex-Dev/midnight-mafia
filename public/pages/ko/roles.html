@@ -119,17 +119,49 @@
             경찰은 기본으로 포함되고, 의사는 다섯 번째 참가자가 들어오면
             기본으로 포함됩니다.
           </p>
-          <ul>
-            <li>4명: 마피아 1 · 경찰 1 · 시민 2</li>
-            <li>5명: 마피아 1 · 경찰 1 · 의사 1 · 시민 2</li>
-            <li>6명: 마피아 1 · 경찰 1 · 의사 1 · 시민 3</li>
-            <li>7명: 마피아 1 · 경찰 1 · 의사 1 · 시민 4</li>
-            <li>8명: 마피아 2 · 경찰 1 · 의사 1 · 시민 4</li>
-            <li>9명: 마피아 2 · 경찰 1 · 의사 1 · 시민 5</li>
-            <li>10명: 마피아 2 · 경찰 1 · 의사 1 · 시민 6</li>
-            <li>11명: 마피아 2 · 경찰 1 · 의사 1 · 시민 7</li>
-            <li>12명: 마피아 3 · 경찰 1 · 의사 1 · 시민 7</li>
-          </ul>
+          <div class="role-setup-table-wrap">
+            <table class="role-setup-table">
+              <caption>4명부터 12명까지의 기본 역할 구성</caption>
+              <thead>
+                <tr>
+                  <th scope="col">인원</th>
+                  <th scope="col" class="setup-mafia">마피아</th>
+                  <th scope="col" class="setup-cop">경찰</th>
+                  <th scope="col" class="setup-doctor">의사</th>
+                  <th scope="col" class="setup-citizen">시민</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-player-count="4">
+                  <th scope="row">4명</th><td>1</td><td>1</td><td class="is-zero">0</td><td>2</td>
+                </tr>
+                <tr data-player-count="5">
+                  <th scope="row">5명</th><td>1</td><td>1</td><td>1</td><td>2</td>
+                </tr>
+                <tr data-player-count="6">
+                  <th scope="row">6명</th><td>1</td><td>1</td><td>1</td><td>3</td>
+                </tr>
+                <tr data-player-count="7">
+                  <th scope="row">7명</th><td>1</td><td>1</td><td>1</td><td>4</td>
+                </tr>
+                <tr data-player-count="8" class="mafia-step">
+                  <th scope="row">8명</th><td>2</td><td>1</td><td>1</td><td>4</td>
+                </tr>
+                <tr data-player-count="9">
+                  <th scope="row">9명</th><td>2</td><td>1</td><td>1</td><td>5</td>
+                </tr>
+                <tr data-player-count="10">
+                  <th scope="row">10명</th><td>2</td><td>1</td><td>1</td><td>6</td>
+                </tr>
+                <tr data-player-count="11">
+                  <th scope="row">11명</th><td>2</td><td>1</td><td>1</td><td>7</td>
+                </tr>
+                <tr data-player-count="12" class="mafia-step">
+                  <th scope="row">12명</th><td>3</td><td>1</td><td>1</td><td>7</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <div class="note-box">
             방장은 대기실에서 경찰과 의사를 각각 끌 수 있습니다. 역할을 끄면 그
             인원은 시민으로 배정됩니다.
