@@ -104,6 +104,8 @@ test("information pages exist in Korean and English", async () => {
     ]);
     assert.match(ko, /<title>.+<\/title>/);
     assert.match(en, /<title>.+<\/title>/);
+    assert.match(ko, /<title>심야 마피아 \| /);
+    assert.match(en, /<title>Midnight Mafia \| /);
     assert.match(ko, /© 2026 FLEEX/);
     assert.match(en, /© 2026 FLEEX/);
   }
@@ -130,7 +132,7 @@ test("information pages exist in Korean and English", async () => {
   ]);
   assert.match(
     enHome,
-    /<title>Play Mafia Online With Friends—No Moderator \| Midnight Mafia<\/title>/,
+    /<title>Midnight Mafia \| Play Mafia Online With Friends—No Moderator<\/title>/,
   );
   assert.match(
     enHome,
@@ -195,7 +197,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   );
   assert.match(
     index,
-    /<title>사회자 없는 온라인 마피아 게임 \| 심야 마피아<\/title>/,
+    /<title>심야 마피아 \| 사회자 없는 온라인 마피아 게임<\/title>/,
   );
   assert.match(index, /무료 온라인 마피아 게임 사이트/);
   assert.match(enHome, /free browser-based social deduction game/i);
@@ -218,7 +220,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /property="og:locale" content="ko_KR"/);
   assert.match(
     index,
-    /property="og:image" content="https:\/\/midnight-mafia\.fleex\.app\/og\/default\.png\?lang=ko&amp;v=9"/,
+    /property="og:image"[\s\S]*?content="https:\/\/midnight-mafia\.fleex\.app\/og\/default\.png\?lang=ko&amp;v=9"/,
   );
   assert.match(index, /property="og:image:secure_url"/);
   assert.match(index, /property="og:image:width" content="1200"/);
@@ -226,7 +228,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /name="twitter:card" content="summary_large_image"/);
   assert.match(
     index,
-    /rel="icon" type="image\/svg\+xml" href="\/icons\/site-icon\.svg\?v=\d+"/,
+    /rel="icon"[\s\S]*?type="image\/svg\+xml"[\s\S]*?href="\/icons\/site-icon\.svg\?v=\d+"/,
   );
   assert.match(index, /<h1 id="initial-title">오늘 밤,/);
   assert.match(

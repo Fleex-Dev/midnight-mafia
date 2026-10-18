@@ -15,8 +15,7 @@ const EN = {
   사망: "Eliminated",
   "한 명의 거짓말쟁이를 찾아라": "Find the liars among you",
   "어떻게 시작할까요?": "How would you like to start?",
-  "사회자 없는 온라인 마피아 게임":
-    "Play Mafia online—no moderator needed",
+  "사회자 없는 온라인 마피아 게임": "Play Mafia online—no moderator needed",
   "4~12명이 방 코드나 QR 초대 링크로 참가해 역할 확인, 밤 행동과 낮 투표를 각자의 휴대폰에서 진행합니다.":
     "Four to twelve friends can join by room code or QR link, then reveal roles, take night actions, and vote from their own phones.",
   "새로운 사건을 열거나, 친구의 사건에 합류하세요.":
@@ -33,8 +32,7 @@ const EN = {
   "친구에게 받은 방 코드와 닉네임을 입력하고 게임에 참가하세요.":
     "Enter the room code from your friend and choose a nickname.",
   "방 참가하기": "Join a room",
-  "초대받은 사건에 참가할 준비가 되셨나요?":
-    "Ready to join the invited game?",
+  "초대받은 사건에 참가할 준비가 되셨나요?": "Ready to join the invited game?",
   "4자리 방 코드": "Four-character room code",
   "방 코드 지우기": "Clear room code",
   "오늘 밤,": "Tonight,",
@@ -267,7 +265,8 @@ const EN = {
   "잘못된 경로입니다.": "Invalid path.",
   "지금은 밤 행동을 할 수 없습니다.": "Night actions are not available now.",
   "먼저 대상을 선택해 주세요.": "Choose a target first.",
-  "먼저 투표할 사람을 선택해 주세요.": "Choose a player before confirming your vote.",
+  "먼저 투표할 사람을 선택해 주세요.":
+    "Choose a player before confirming your vote.",
   "이미 선택을 확정했습니다.": "Your choice has already been confirmed.",
   "지금은 준비할 단계가 아닙니다.": "The game is not in the ready phase.",
   "지금은 투표를 준비할 수 없습니다.": "You cannot get ready to vote now.",
@@ -322,8 +321,8 @@ if (queryLocale === "en" || queryLocale === "ko") {
 document.documentElement.lang = locale;
 document.title =
   locale === "en"
-    ? "Play Mafia Online With Friends—No Moderator | Midnight Mafia"
-    : "사회자 없는 온라인 마피아 게임 | 심야 마피아";
+    ? "Midnight Mafia | Play Mafia Online With Friends—No Moderator"
+    : "심야 마피아 | 사회자 없는 온라인 마피아 게임";
 
 function dynamicEnglish(text) {
   let match;
@@ -347,9 +346,7 @@ function dynamicEnglish(text) {
     return `${EN[match[1]]} · Hide`;
   if ((match = text.match(/^(\d+)표를 받아 과반수를 넘었습니다\.$/)))
     return `${match[1]} votes reached the majority.`;
-  if (
-    (match = text.match(/^최다 득표 (\d+)표 · 추방 기준 (\d+)표$/))
-  )
+  if ((match = text.match(/^최다 득표 (\d+)표 · 추방 기준 (\d+)표$/)))
     return `Top vote: ${match[1]} · ${match[2]} needed to exile`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 선택을 마쳤습니다\.$/)))
     return `${match[1]} of ${match[2]} players have chosen.`;
@@ -357,7 +354,9 @@ function dynamicEnglish(text) {
     return `${match[1]} of ${match[2]} players have reviewed the result.`;
   if ((match = text.match(/^(\d+)\/(\d+)명이 투표할 준비를 마쳤습니다\.$/)))
     return `${match[1]} of ${match[2]} players are ready to vote.`;
-  if ((match = text.match(/^(\d+)\/(\d+)명이 밤을 시작할 준비를 마쳤습니다\.$/)))
+  if (
+    (match = text.match(/^(\d+)\/(\d+)명이 밤을 시작할 준비를 마쳤습니다\.$/))
+  )
     return `${match[1]} of ${match[2]} players are ready for night.`;
   if (
     (match = text.match(
@@ -383,16 +382,10 @@ function dynamicEnglish(text) {
     ))
   )
     return `${match[1]} was exiled by vote. Their role was ${EN[match[2]] || match[2]}.`;
-  if (
-    (match = text.match(
-      /^(.+) 님이 투표로 마피아임이 밝혀졌습니다\.$/,
-    ))
-  )
+  if ((match = text.match(/^(.+) 님이 투표로 마피아임이 밝혀졌습니다\.$/)))
     return `${match[1]} was identified as Mafia by vote.`;
   if (
-    (match = text.match(
-      /^(.+) 님은 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/,
-    ))
+    (match = text.match(/^(.+) 님은 (마피아|경찰|의사|시민)(?:이)?었습니다\.$/))
   )
     return `${match[1]} was ${EN[match[2]] || match[2]}.`;
   if (
