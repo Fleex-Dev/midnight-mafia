@@ -149,15 +149,22 @@ test("information pages exist in Korean and English", async () => {
 });
 
 test("the application keeps localization and responsive styles wired", async () => {
-  const [index, play, app, styles] = await Promise.all([
+  const [index, play, landingStart, app, styles] = await Promise.all([
     read("public/index.html"),
     read("public/play/index.html"),
+    read("public/templates/landing-start.html"),
     read("public/app.js"),
     read("public/css/style.css"),
   ]);
   assert.match(index, /viewport-fit=cover/);
   assert.match(index, /href="\/play\/\?mode=create"/);
   assert.match(index, /href="\/play\/\?mode=join"/);
+  assert.match(index, /앱 설치 없이 각자의 휴대폰으로 역할을 확인하고 투표하세요/);
+  assert.match(index, /<h2 class="entry-title">어떻게 시작할까요\?<\/h2>/);
+  assert.match(index, /새로운 사건을 열거나, 친구의 사건에 합류하세요/);
+  assert.match(landingStart, /앱 설치 없이 각자의 휴대폰으로 역할을 확인하고/);
+  assert.match(landingStart, /<h2 class="entry-title">어떻게 시작할까요\?<\/h2>/);
+  assert.match(landingStart, /새로운 사건을 열거나, 친구의 사건에 합류하세요/);
   assert.match(index, />새 게임 만들기</);
   assert.match(index, />방 참가하기</);
   assert.doesNotMatch(index, /src="\/app\.js"/);
