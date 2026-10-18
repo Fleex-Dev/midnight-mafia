@@ -207,7 +207,7 @@ test("search metadata, sitemap, verification, and private room indexing rules ar
   assert.match(index, /name="twitter:card" content="summary_large_image"/);
   assert.match(
     index,
-    /rel="icon" type="image\/svg\+xml" href="\/icons\/site-icon\.svg"/,
+    /rel="icon" type="image\/svg\+xml" href="\/icons\/site-icon\.svg\?v=\d+"/,
   );
   assert.match(index, /<h1 id="initial-title">오늘 밤,/);
   assert.match(
